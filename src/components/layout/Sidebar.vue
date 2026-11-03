@@ -25,7 +25,8 @@
           data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
           <span class="d-flex align-items-start gap-10">
             <img :src="currentUser?.avatar || '/assets/images/thumbs/leave-request-img2.png'" alt="Thumbnail"
-              class="w-40-px h-40-px rounded-circle object-fit-cover flex-shrink-0">
+              class="w-40-px h-40-px rounded-circle object-fit-cover flex-shrink-0"
+              @error="(e) => e.target.src = '/assets/images/thumbs/leave-request-img2.png'">
             <span class="profile-dropdown__contents">
               <span class="h6 mb-0 text-md d-block text-primary-light">{{ currentUser?.name || 'Academic Admin' }}</span>
               <span class="text-secondary-light text-sm mb-0 d-block text-capitalize">{{ userRoleDisplay }}</span>

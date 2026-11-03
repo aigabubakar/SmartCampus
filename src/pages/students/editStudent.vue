@@ -70,6 +70,7 @@
                                 :src="form.avatar || defaultAvatar"
                                 alt="Scholar Portrait"
                                 class="w-100 h-100 object-fit-cover"
+                                @error="(e) => e.target.src = defaultAvatar"
                               >
                               <!-- Loading overlay while reading file -->
                               <div v-if="isReadingPhoto" class="position-absolute top-0 start-0 w-100 h-100 bg-black bg-opacity-50 d-flex justify-content-center align-items-center text-white">

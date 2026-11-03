@@ -8,7 +8,7 @@
             @click="$emit('edit')"
             title="Click to update academic photograph"
           >
-            <img :src="studentAvatar" alt="Student Scholar Portrait" class="w-100 h-100 object-fit-cover">
+            <img :src="studentAvatar" alt="Student Scholar Portrait" class="w-100 h-100 object-fit-cover" @error="(e) => e.target.src = '/assets/images/thumbs/user-img1.png'">
             <span class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-50 text-white text-2xs py-4 text-center">
               <i class="ri-camera-fill me-2"></i>Change
             </span>

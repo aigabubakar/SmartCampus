@@ -24,6 +24,7 @@ def run_tests():
     assert me_res.status_code == 200, f"GET /students/me failed: {me_res.text}"
     dossier = me_res.json()
     assert dossier["matricNumber"] == "SCI/2026/0491"
+    original_avatar = dossier.get("avatar")
     print(f"[PASS] GET /students/me returned dossier with phone: {dossier.get('phone')} and hall: {dossier.get('hallOfResidence')}")
 
     # 3. GET /students/{identifier}
@@ -119,6 +120,27 @@ def run_tests():
     assert db_avatar == saved_avatar_path, f"Database avatar mismatch: {db_avatar}"
     conn.close()
     print(f"[PASS] Base64 photograph decoded, stored to disk ({saved_avatar_path}), and persisted to database")
+
+    # 10. Clean up: Restore user's authentic avatar and clean up test artifact
+    if original_avatar:
+        restore_res = requests.put(f"{BASE_URL}/students/me", json={"avatar": original_avatar}, headers=headers)
+        assert restore_res.status_code == 200, f"Failed to restore original avatar: {restore_res.text}"
+        conn = sqlite3.connect("backend/smartcampus.db")
+        c = conn.cursor()
+        c.execute("SELECT avatar FROM users WHERE id='STU-2026-089'")
+        restored_db_avatar = c.fetchone()[0]
+        assert restored_db_avatar == original_avatar, f"Avatar not properly restored in DB: {restored_db_avatar}"
+        conn.close()
+        print(f"[PASS] Clean teardown: User's authentic avatar ({original_avatar}) restored, avoiding clobbering")
+
+    from pathlib import Path
+    for pub_dir in [Path("public/uploads/avatars"), Path("backend/public/uploads/avatars")]:
+        test_file = pub_dir / Path(saved_avatar_path).name
+        if test_file.exists():
+            try:
+                test_file.unlink()
+            except Exception:
+                pass
 
     print("\nALL STUDENT PROFILE & PHOTOGRAPH TESTS PASSED SUCCESSFULLY!")
 

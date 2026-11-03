@@ -14,6 +14,7 @@
                 :src="studentUser?.avatar || '/assets/images/thumbs/user-img1.png'" 
                 alt="Student Avatar"
                 class="w-80-px h-80-px rounded-circle object-fit-cover border border-3 border-white shadow"
+                @error="(e) => e.target.src = '/assets/images/thumbs/user-img1.png'"
               >
               <span class="position-absolute bottom-0 end-0 bg-primary-700 text-white border border-2 border-white rounded-circle w-26-px h-26-px d-flex justify-content-center align-items-center text-xs shadow-sm" title="Upload or Change Photograph">
                 <i class="ri-camera-fill text-2xs"></i>

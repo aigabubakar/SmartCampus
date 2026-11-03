@@ -158,7 +158,7 @@
               <td><span class="text-primary-600">{{ student.admissionNo }}</span></td>
               <td>
                 <div class="d-flex align-items-center">
-                  <img :src="student.image" alt="Image" class="flex-shrink-0 me-12 radius-8">
+                  <img :src="student.image || '/assets/images/thumbs/user-img1.png'" alt="Image" class="w-40-px h-40-px rounded-circle object-fit-cover flex-shrink-0 me-12 radius-8" @error="(e) => e.target.src = '/assets/images/thumbs/user-img1.png'">
                   <div class="">
                     <h6 class="text-md mb-0 fw-medium flex-grow-1">{{ student.name }}</h6>
                     <span class="">Roll No: <span class="fw-semibold">{{ student.rollNo }}</span> </span>
@@ -313,7 +313,7 @@ export default {
       category: typeof s.cgpa === "number" ? `CGPA: ${s.cgpa.toFixed(2)}` : "CGPA: 3.80",
       status: s.status || "Active",
       statusClass: s.status === "Suspended" ? "bg-danger-100 text-danger-600" : "bg-success-100 text-success-600",
-      image: avatarList[idx % avatarList.length]
+      image: s.avatar || avatarList[idx % avatarList.length]
     });
 
     const initDataTable = () => {
