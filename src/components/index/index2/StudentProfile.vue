@@ -4,20 +4,31 @@
       
       <!-- Left: Student Academic Identity Card -->
       <div
-        class="radius-12 overflow-hidden position-relative z-1 py-28 px-20 text-center d-flex justify-content-center align-items-center flex-grow-1"
-        style="background: linear-gradient(135deg, #134e48 0%, #25A194 100%); min-width: 240px;"
+        class="radius-12 overflow-hidden position-relative z-1 py-24 px-20 text-center d-flex justify-content-center align-items-center flex-grow-1"
+        style="background: linear-gradient(135deg, #134e48 0%, #25A194 100%); min-width: 250px; max-width: 320px;"
       >
-        <div>
-          <div class="position-relative d-inline-block mb-12">
-            <router-link to="/edit-student" title="Change Academic Photograph" class="d-block position-relative text-decoration-none">
-              <img 
-                :src="studentUser?.avatar || '/assets/images/thumbs/user-img1.png'" 
-                alt="Student Avatar"
-                class="w-80-px h-80-px rounded-circle object-fit-cover border border-3 border-white shadow"
-                @error="(e) => e.target.src = '/assets/images/thumbs/user-img1.png'"
+        <div class="w-100 d-flex flex-column align-items-center">
+          <!-- Prominent Circular Portrait Container -->
+          <div class="position-relative d-inline-block mb-14" style="width: 112px; height: 112px;">
+            <router-link to="/edit-student" title="Change Academic Photograph" class="d-block position-relative text-decoration-none w-100 h-100">
+              <figure
+                class="rounded-circle overflow-hidden shadow-sm border border-3 border-white mb-0 bg-white d-flex justify-content-center align-items-center"
+                style="width: 112px; height: 112px; min-width: 112px; min-height: 112px; max-width: 112px; max-height: 112px; border-radius: 50% !important; margin: 0 auto;"
               >
-              <span class="position-absolute bottom-0 end-0 bg-primary-700 text-white border border-2 border-white rounded-circle w-26-px h-26-px d-flex justify-content-center align-items-center text-xs shadow-sm" title="Upload or Change Photograph">
-                <i class="ri-camera-fill text-2xs"></i>
+                <img 
+                  :src="studentUser?.avatar || '/assets/images/thumbs/user-img1.png'" 
+                  alt="Student Avatar"
+                  class="rounded-circle"
+                  style="width: 100% !important; height: 100% !important; min-width: 100% !important; min-height: 100% !important; max-width: 100% !important; max-height: 100% !important; object-fit: cover !important; object-position: center !important; aspect-ratio: 1 / 1 !important; display: block;"
+                  @error="(e) => e.target.src = '/assets/images/thumbs/user-img1.png'"
+                >
+              </figure>
+              <span 
+                class="position-absolute bottom-0 end-0 bg-primary-700 text-white border border-2 border-white rounded-circle d-flex justify-content-center align-items-center shadow-sm"
+                style="width: 32px; height: 32px; font-size: 15px;"
+                title="Upload or Change Photograph"
+              >
+                <i class="ri-camera-fill"></i>
               </span>
             </router-link>
           </div>

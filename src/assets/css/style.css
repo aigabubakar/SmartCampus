@@ -3822,6 +3822,30 @@ th {
   width: 4.75rem !important;
 }
 
+.w-80-px {
+  width: 80px !important;
+}
+
+.h-80-px {
+  height: 80px !important;
+}
+
+.w-88-px {
+  width: 88px !important;
+}
+
+.h-88-px {
+  height: 88px !important;
+}
+
+.w-90-px {
+  width: 90px !important;
+}
+
+.h-90-px {
+  height: 90px !important;
+}
+
 .py-res-120 {
   padding: clamp(3.75rem, -0.8142rem + 9.5087vw, 7.5rem) 0;
 }

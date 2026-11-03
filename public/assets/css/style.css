@@ -15001,4 +15001,12 @@ table.dataTable td.dt-type-date {
 [data-bs-theme=dark] .btn-light span {
   color: #111827 !important;
 }
+
+.w-80-px { width: 80px !important; }
+.h-80-px { height: 80px !important; }
+.w-88-px { width: 88px !important; }
+.h-88-px { height: 88px !important; }
+.w-90-px { width: 90px !important; }
+.h-90-px { height: 90px !important; }
+
 

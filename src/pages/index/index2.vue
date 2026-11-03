@@ -12,11 +12,18 @@
             
             <!-- Left: Student Info & Academic Standing -->
             <div class="d-flex align-items-center gap-16">
-              <img 
-                :src="studentUser?.avatar || '/assets/images/thumbs/user-img1.png'" 
-                alt="Student Profile" 
-                class="w-64-px h-64-px rounded-circle bg-white p-2 shadow-sm flex-shrink-0 object-fit-cover border border-2 border-white"
+              <div
+                class="rounded-circle overflow-hidden bg-white shadow-sm flex-shrink-0 border border-2 border-white d-flex justify-content-center align-items-center"
+                style="width: 68px; height: 68px; min-width: 68px; min-height: 68px; max-width: 68px; max-height: 68px; border-radius: 50% !important;"
               >
+                <img 
+                  :src="studentUser?.avatar || '/assets/images/thumbs/user-img1.png'" 
+                  alt="Student Profile" 
+                  class="rounded-circle"
+                  style="width: 100% !important; height: 100% !important; min-width: 100% !important; min-height: 100% !important; max-width: 100% !important; max-height: 100% !important; object-fit: cover !important; object-position: center !important; aspect-ratio: 1 / 1 !important; display: block;"
+                  @error="(e) => e.target.src = '/assets/images/thumbs/user-img1.png'"
+                >
+              </div>
               <div>
                 <div class="d-flex align-items-center gap-10 flex-wrap">
                   <h4 class="fw-bold mb-0 text-white">Welcome back, {{ studentUser?.name || 'Sophia Chen' }}</h4>

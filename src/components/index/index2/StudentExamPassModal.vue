@@ -26,11 +26,18 @@
               
               <!-- Student Photo & Identification -->
               <div class="d-flex align-items-center gap-16">
-                <img 
-                  :src="studentUser?.avatar || '/assets/images/thumbs/user-img1.png'" 
-                  alt="Student" 
-                  class="w-64-px h-64-px rounded-circle object-fit-cover border border-2 border-primary-600 shadow-sm"
+                <div
+                  class="rounded-circle overflow-hidden bg-white shadow-sm flex-shrink-0 border border-2 border-primary-600 d-flex justify-content-center align-items-center"
+                  style="width: 72px; height: 72px; min-width: 72px; min-height: 72px; max-width: 72px; max-height: 72px; border-radius: 50% !important;"
                 >
+                  <img 
+                    :src="studentUser?.avatar || '/assets/images/thumbs/user-img1.png'" 
+                    alt="Student" 
+                    class="rounded-circle"
+                    style="width: 100% !important; height: 100% !important; min-width: 100% !important; min-height: 100% !important; max-width: 100% !important; max-height: 100% !important; object-fit: cover !important; object-position: center !important; aspect-ratio: 1 / 1 !important; display: block;"
+                    @error="(e) => e.target.src = '/assets/images/thumbs/user-img1.png'"
+                  >
+                </div>
                 <div>
                   <h5 class="fw-bold text-neutral-900 mb-2">{{ studentUser?.name || 'Sophia Chen' }}</h5>
                   <div class="text-xs text-secondary-light">Matriculation No: <strong class="text-primary-light font-monospace">{{ studentUser?.matricNumber || 'SCI/2026/0491' }}</strong></div>
