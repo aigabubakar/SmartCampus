@@ -64,3 +64,12 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# User Uploads
+uploads/avatars/*
+!uploads/avatars/.gitkeep
+backend/public/uploads/avatars/*
+!backend/public/uploads/avatars/.gitkeep
+public/uploads/avatars/*
+!public/uploads/avatars/.gitkeep
+

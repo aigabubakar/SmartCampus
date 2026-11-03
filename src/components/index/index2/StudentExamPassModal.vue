@@ -42,7 +42,7 @@
               <!-- Clearance Stamp & QR Code -->
               <div class="text-center bg-white p-12 radius-8 border border-neutral-200 shadow-xs">
                 <div class="w-80-px h-80-px bg-neutral-100 rounded d-flex align-items-center justify-content-center mx-auto mb-6">
-                  <iconify-icon icon="solar:qr-code-bold" class="text-5xl text-neutral-900"></iconify-icon>
+                  <iconify-icon icon="solar:qr-code-bold" class="text-5xl text-dark" style="color: #111827 !important;"></iconify-icon>
                 </div>
                 <span class="badge bg-success-subtle text-success-800 border border-success-subtle text-xs px-8 py-2 radius-4 fw-bold">
                   VERIFIED CLEAR

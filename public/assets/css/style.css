@@ -14968,4 +14968,37 @@ table.dataTable td.dt-type-date {
   border: 1px solid rgba(255, 255, 255, 0.35) !important;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-}
+}
+
+/* ==========================================================================
+   Button Light & Hero Action Button Contrast Guards
+   Ensures text on light/white buttons remains crisp and dark in all themes
+   ========================================================================== */
+.btn-light,
+.btn-light.text-neutral-900,
+[data-theme=dark] .btn-light,
+[data-theme=dark] .btn-light.text-neutral-900,
+[data-bs-theme=dark] .btn-light,
+[data-bs-theme=dark] .btn-light.text-neutral-900 {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  border-color: #ffffff !important;
+}
+
+.btn-light:hover,
+.btn-light:focus,
+[data-theme=dark] .btn-light:hover,
+[data-theme=dark] .btn-light:focus,
+[data-bs-theme=dark] .btn-light:hover,
+[data-bs-theme=dark] .btn-light:focus {
+  background-color: #f3f4f6 !important;
+  color: #111827 !important;
+  border-color: #f3f4f6 !important;
+}
+
+.btn-light span,
+[data-theme=dark] .btn-light span,
+[data-bs-theme=dark] .btn-light span {
+  color: #111827 !important;
+}
+

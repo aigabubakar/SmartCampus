@@ -32,12 +32,13 @@
           <div class="mt-4 d-flex justify-content-center gap-8 flex-wrap">
             <button 
               type="button" 
-              class="btn btn-light btn-sm radius-8 px-12 py-6 text-xs fw-bold text-neutral-900 d-inline-flex align-items-center gap-6 shadow-sm"
+              class="btn btn-light btn-sm radius-8 px-12 py-6 text-xs fw-bold d-inline-flex align-items-center gap-6 shadow-sm"
+              style="background-color: #ffffff !important; color: #111827 !important; border: 1px solid #ffffff !important;"
               data-bs-toggle="modal"
               data-bs-target="#studentExamPassModal"
             >
-              <iconify-icon icon="solar:ticket-bold" class="text-primary-600 text-sm"></iconify-icon>
-              Exam Pass
+              <i class="ri-shield-check-fill text-primary-600 text-sm"></i>
+              <span style="color: #111827 !important;">Exam Pass</span>
             </button>
             <router-link
               to="/edit-student"

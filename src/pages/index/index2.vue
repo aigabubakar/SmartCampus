@@ -37,12 +37,13 @@
             <div class="d-flex align-items-center gap-12 flex-wrap">
               <button 
                 type="button" 
-                class="btn btn-light radius-10 px-16 py-10 text-sm fw-bold text-neutral-900 d-flex align-items-center gap-8 shadow-sm"
+                class="btn btn-light radius-10 px-16 py-10 text-sm fw-bold d-flex align-items-center gap-8 shadow-sm"
+                style="background-color: #ffffff !important; color: #111827 !important; border: 1px solid #ffffff !important;"
                 data-bs-toggle="modal"
                 data-bs-target="#studentExamPassModal"
               >
-                <iconify-icon icon="solar:ticket-bold" class="text-lg text-primary-600"></iconify-icon>
-                View Exam Clearance Pass
+                <i class="ri-shield-check-fill text-lg text-primary-600"></i>
+                <span style="color: #111827 !important;">View Exam Clearance Pass</span>
               </button>
             </div>
 
