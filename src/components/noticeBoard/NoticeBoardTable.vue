@@ -95,10 +95,28 @@
                 </span>
               </td>
 
-              <!-- Subject & Excerpt -->
-              <td class="py-12 px-16">
-                <h6 class="text-sm fw-bold text-neutral-900 mb-2">{{ notice.title }}</h6>
-                <p class="text-secondary-light text-xs mb-0 line-clamp-2">{{ notice.description }}</p>
+              <!-- Subject & Excerpt with Rollover Details -->
+              <td class="py-12 px-16 position-relative notice-details-cell" style="min-width: 280px; max-width: 480px;">
+                <div class="notice-details-block">
+                  <h6 class="text-sm fw-bold text-neutral-900 mb-2">{{ notice.title }}</h6>
+                  <p class="text-secondary-light text-xs mb-0 text-line-2 notice-details-preview">{{ notice.description }}</p>
+
+                  <!-- Rollover Details Popover on Hover -->
+                  <div class="notice-rollover-popover shadow-lg radius-12 p-16 border bg-base position-absolute z-3">
+                    <div class="d-flex align-items-center justify-content-between gap-8 mb-8 pb-8 border-bottom">
+                      <span class="badge radius-6 text-xxs px-8 py-2 fw-semibold" :class="notice.senderColor || 'bg-primary-50 text-primary-600'">
+                        {{ notice.sender }}
+                      </span>
+                      <span class="text-secondary-light text-xxs">{{ notice.date }}</span>
+                    </div>
+                    <h6 class="text-sm fw-bold text-neutral-900 mb-6">{{ notice.title }}</h6>
+                    <p class="text-neutral-700 text-xs mb-0 line-height-base">{{ notice.description }}</p>
+                    <div class="mt-10 pt-8 border-top d-flex align-items-center justify-content-between text-xxs text-secondary-light">
+                      <span>Audience: <strong class="text-capitalize">{{ notice.audience === 'all' ? 'All Campus' : notice.audience }}</strong></span>
+                      <span class="badge radius-4 px-6 py-2" :class="notice.priorityClass">{{ notice.priority }}</span>
+                    </div>
+                  </div>
+                </div>
               </td>
 
               <!-- Target Audience -->
@@ -246,3 +264,41 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.notice-details-cell {
+  position: relative;
+  cursor: pointer;
+}
+
+.notice-details-cell:hover {
+  background-color: rgba(72, 127, 255, 0.03);
+}
+
+.notice-rollover-popover {
+  display: none;
+  top: 90%;
+  left: 16px;
+  min-width: 380px;
+  max-width: 480px;
+  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  pointer-events: none;
+  border-color: var(--neutral-200) !important;
+}
+
+.notice-details-cell:hover .notice-rollover-popover {
+  display: block;
+  animation: noticeFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes noticeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>
