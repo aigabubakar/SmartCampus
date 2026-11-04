@@ -4061,6 +4061,10 @@ th {
   max-height: 390px;
 }
 
+.max-h-310-px {
+  max-height: 310px !important;
+}
+
 .max-h-494-px {
   max-height: 494px;
 }

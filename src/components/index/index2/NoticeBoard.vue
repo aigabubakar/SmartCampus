@@ -1,6 +1,6 @@
 <template>
   <div class="card h-100 shadow-1 radius-16 border-0">
-    <div class="card-body p-0">
+    <div class="card-body p-0 d-flex flex-column">
       <div class="d-flex flex-wrap align-items-center justify-content-between px-20 py-16 border-bottom border-neutral-200">
         <div>
           <h6 class="text-lg mb-0 fw-bold text-neutral-900">Student Bulletins & Campus Notices</h6>
@@ -12,8 +12,8 @@
         </router-link>
       </div>
 
-      <div class="ps-20 pt-20 pb-20">
-        <div class="pe-20 d-flex flex-column gap-20 max-h-490-px overflow-y-auto scroll-sm">
+      <div class="ps-20 pt-16 pb-16 flex-grow-1">
+        <div class="pe-20 d-flex flex-column gap-16 overflow-y-auto max-h-310-px scroll-sm" style="max-height: 310px;">
           <div 
             v-for="notice in notices" 
             :key="notice.id"

@@ -1,6 +1,6 @@
 <template>
   <div class="card h-100 shadow-1 radius-16 border-0">
-    <div class="card-body p-0">
+    <div class="card-body p-0 d-flex flex-column">
       <div
         class="d-flex flex-wrap align-items-center justify-content-between px-20 py-16 border-bottom border-neutral-200">
         <div>
@@ -8,8 +8,8 @@
           <span class="text-secondary-light text-xs">Seminars, Hackathons & Key Deadlines</span>
         </div>
       </div>
-      <div class="ps-20 pt-20 pb-20">
-        <div class="pe-20 d-flex flex-column gap-24 overflow-y-auto max-h-490-px scroll-sm">
+      <div class="ps-20 pt-16 pb-16 flex-grow-1">
+        <div class="pe-20 d-flex flex-column gap-18 overflow-y-auto max-h-310-px scroll-sm" style="max-height: 310px;">
           
           <div class="d-flex align-items-center justify-content-between gap-16">
             <div class="ps-10 border-start-width-3-px border-purple-600 min-w-0">

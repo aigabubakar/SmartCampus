@@ -1,6 +1,6 @@
 <template>
   <div class="card h-100 shadow-1 radius-16 border-0">
-    <div class="card-body p-0">
+    <div class="card-body p-0 d-flex flex-column">
       <div
         class="d-flex flex-wrap align-items-center justify-content-between px-20 py-16 border-bottom border-neutral-200">
         <div>
@@ -8,7 +8,7 @@
           <span class="text-secondary-light text-xs">Semester Schedule & Key Milestones</span>
         </div>
       </div>
-      <div class="p-20">
+      <div class="p-20 flex-grow-1 d-flex flex-column justify-content-center">
         <div class="calendar style-big">
           <div class="calendar__header">
             <button type="button" class="calendar__arrow left" @click="prevMonth">
