@@ -1,9 +1,12 @@
 <template>
-  <div class="card h-100">
+  <div class="card h-100 shadow-1 radius-16 border-0">
     <div class="card-body p-0">
       <div
         class="d-flex flex-wrap align-items-center justify-content-between px-20 py-16 border-bottom border-neutral-200">
-        <h6 class="text-lg mb-0">Calendar</h6>
+        <div>
+          <h6 class="text-lg mb-0 fw-bold text-neutral-900">Academic Calendar</h6>
+          <span class="text-secondary-light text-xs">Semester Schedule & Key Milestones</span>
+        </div>
       </div>
       <div class="p-20">
         <div class="calendar style-big">

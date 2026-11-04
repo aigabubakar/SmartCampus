@@ -70,34 +70,19 @@
             <AttendanceChart />
           </div>
 
-          <!-- Today's Lecture Timetable -->
-          <div class="col-xxl-4 col-lg-6">
-            <TodaysClass />
-          </div>
-
-          <!-- Semester Exam & Assessment Results -->
-          <div class="col-xxl-8">
+          <!-- Academic Semester Grades & Assessments -->
+          <div class="col-12">
             <ExamResults />
           </div>
 
           <!-- Academic Calendar -->
-          <div class="col-xxl-4 col-lg-6">
+          <div class="col-xxl-6 col-xl-6 col-lg-12">
             <Calendar />
           </div>
 
-          <!-- Leave Status -->
-          <div class="col-xxl-4 col-lg-6">
-            <LeaveStatus />
-          </div>
-
-          <!-- Notice Board & Circulars -->
-          <div class="col-xxl-4 col-lg-6">
+          <!-- Student Bulletins & Campus Notices -->
+          <div class="col-xxl-6 col-xl-6 col-lg-12">
             <NoticeBoard />
-          </div>
-
-          <!-- Upcoming Events -->
-          <div class="col-xxl-4 col-lg-6">
-            <UpcomingEvents />
           </div>
         </div>
       </div>
@@ -122,12 +107,9 @@ import Footer from '@/components/layout/Footer.vue';
 
 import StudentProfile from '@/components/index/index2/StudentProfile.vue';
 import AttendanceChart from '@/components/index/index2/AttendanceChart.vue';
-import TodaysClass from '@/components/index/index2/TodaysClass.vue';
 import ExamResults from '@/components/index/index2/ExamResults.vue';
 import Calendar from '@/components/index/index2/Calendar.vue';
-import LeaveStatus from '@/components/index/index2/LeaveStatus.vue';
 import NoticeBoard from '@/components/index/index2/NoticeBoard.vue';
-import UpcomingEvents from '@/components/index/index2/UpcomingEvents.vue';
 import StudentExamPassModal from '@/components/index/index2/StudentExamPassModal.vue';
 
 export default {
@@ -138,12 +120,9 @@ export default {
     Footer,
     StudentProfile,
     AttendanceChart,
-    TodaysClass,
     ExamResults,
     Calendar,
-    LeaveStatus,
     NoticeBoard,
-    UpcomingEvents,
     StudentExamPassModal
   },
   setup() {
