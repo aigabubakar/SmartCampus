@@ -28,11 +28,11 @@
           </button>
           <!-- Quick Logout Button -->
           <button type="button" 
-            class="w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center text-secondary-light hover-text-danger-600 cursor-pointer"
+            class="navbar-logout-btn w-40-px h-40-px rounded-circle d-flex justify-content-center align-items-center text-white border-0 cursor-pointer"
             aria-label="Sign Out" 
             title="Sign Out / Log Out" 
             @click="handleLogout">
-             <i class="ri-logout-box-r-line text-xl"></i>
+             <i class="ri-logout-box-r-line text-lg text-white"></i>
           </button>
 
           <div class="dropdown">
@@ -204,3 +204,24 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.navbar-logout-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+  transition: all 0.2s ease-in-out;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.navbar-logout-btn:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.55);
+  transform: translateY(-1px) scale(1.05);
+}
+
+.navbar-logout-btn:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 1px 4px rgba(220, 38, 38, 0.4);
+}
+</style>
+
