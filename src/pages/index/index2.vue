@@ -76,13 +76,18 @@
           </div>
 
           <!-- Academic Calendar -->
-          <div class="col-xxl-6 col-xl-6 col-lg-12">
+          <div class="col-xxl-4 col-xl-4 col-lg-6">
             <Calendar />
           </div>
 
           <!-- Student Bulletins & Campus Notices -->
-          <div class="col-xxl-6 col-xl-6 col-lg-12">
+          <div class="col-xxl-4 col-xl-4 col-lg-6">
             <NoticeBoard />
+          </div>
+
+          <!-- Upcoming Events -->
+          <div class="col-xxl-4 col-xl-4 col-lg-12">
+            <UpcomingEvents />
           </div>
         </div>
       </div>
@@ -110,6 +115,7 @@ import AttendanceChart from '@/components/index/index2/AttendanceChart.vue';
 import ExamResults from '@/components/index/index2/ExamResults.vue';
 import Calendar from '@/components/index/index2/Calendar.vue';
 import NoticeBoard from '@/components/index/index2/NoticeBoard.vue';
+import UpcomingEvents from '@/components/index/index2/UpcomingEvents.vue';
 import StudentExamPassModal from '@/components/index/index2/StudentExamPassModal.vue';
 
 export default {
@@ -123,6 +129,7 @@ export default {
     ExamResults,
     Calendar,
     NoticeBoard,
+    UpcomingEvents,
     StudentExamPassModal
   },
   setup() {
