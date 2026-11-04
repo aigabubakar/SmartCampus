@@ -41,6 +41,7 @@ const DEFAULT_CONFIG = {
     hrm: true,
     leaves: true,
     noticeBoard: true,
+    lms: true,
   },
 
   // Senate Regulations & Academic Policy Parameters

@@ -134,7 +134,9 @@ const routes = [
     { path: '/index-2', component: Index2, meta: { requiresAuth: true, roles: ROLES_STUDENT_AND_ADMIN } },
     { path: '/index-3', component: Index3, meta: { requiresAuth: true, roles: ROLES_FACULTY_AND_ADMIN } },
     { path: '/index-4', component: Index4, meta: { requiresAuth: true, roles: [ROLE_SUPER_ADMIN, ROLE_ADMIN, ROLE_GUARDIAN, 'parent'] } },
-    { path: '/index-5', component: Index5, meta: { requiresAuth: true, roles: ROLES_ANY_ADMIN } },
+    { path: '/index-5', component: Index5, meta: { requiresAuth: true, roles: ROLES_ALL_CAMPUS, title: 'LMS E-Learning Portal' } },
+    { path: '/lms', component: Index5, meta: { requiresAuth: true, roles: ROLES_ALL_CAMPUS, title: 'LMS E-Learning Portal' } },
+    { path: '/lms-dashboard', component: Index5, meta: { requiresAuth: true, roles: ROLES_ALL_CAMPUS, title: 'LMS Dashboard' } },
 
     // ================= 1. PLATFORM OWNER & SUPER ADMIN ONLY =================
     { path: '/role-access', component: RoleAccess, meta: { requiresAuth: true, roles: [ROLE_SUPER_ADMIN], title: 'Super Admin Governance' } },

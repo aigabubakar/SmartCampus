@@ -82,6 +82,12 @@
               <span>My Academic Portal</span>
             </router-link>
           </li>
+          <li v-if="institution.isModuleEnabled('lms')">
+            <router-link to="/lms">
+              <i class="ri-computer-line"></i>
+              <span>LMS Portal</span>
+            </router-link>
+          </li>
           <li>
             <router-link to="/subject-list">
               <i class="ri-book-open-line"></i>
@@ -135,6 +141,12 @@
             <router-link to="/dashboard">
               <i class="ri-dashboard-3-line"></i>
               <span>Lecturer Dashboard</span>
+            </router-link>
+          </li>
+          <li v-if="institution.isModuleEnabled('lms')">
+            <router-link to="/lms">
+              <i class="ri-computer-line"></i>
+              <span>LMS Course Manager</span>
             </router-link>
           </li>
           <li>
@@ -192,6 +204,12 @@
               <span>Ward Academic Overview</span>
             </router-link>
           </li>
+          <li v-if="institution.isModuleEnabled('lms')">
+            <router-link to="/lms">
+              <i class="ri-computer-line"></i>
+              <span>LMS Portal</span>
+            </router-link>
+          </li>
           <li>
             <router-link to="/exam-result">
               <i class="ri-award-line"></i>
@@ -227,6 +245,12 @@
             <router-link to="/dashboard">
               <i class="ri-home-4-line"></i>
               <span>Executive Dashboard</span>
+            </router-link>
+          </li>
+          <li v-if="institution.isModuleEnabled('lms')">
+            <router-link to="/lms">
+              <i class="ri-computer-line"></i>
+              <span>LMS Portal</span>
             </router-link>
           </li>
         <li class="dropdown">
