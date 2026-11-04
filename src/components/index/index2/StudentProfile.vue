@@ -84,17 +84,17 @@
         </div>
 
         <!-- Earned Credits -->
-        <div class="radius-10 py-16 px-20 d-flex flex-wrap align-items-center justify-content-between gap-12 bg-purple-50 border border-purple-100">
+        <div class="radius-10 py-16 px-20 d-flex flex-wrap align-items-center justify-content-between gap-12 bg-purple-50 border border-purple-100 accumulated-credits-card">
           <div class="d-flex align-items-center gap-12 flex-grow-1 min-w-0">
             <div class="w-44-px h-44-px d-inline-flex justify-content-center align-items-center rounded-circle bg-purple-600 text-white text-xl flex-shrink-0">
-              <iconify-icon icon="solar:book-bookmark-bold"></iconify-icon>
+              <i class="ri-book-marked-fill text-xl text-white"></i>
             </div>
             <div class="min-w-0">
               <span class="text-secondary-light text-xs fw-semibold d-block text-truncate mb-2">Accumulated Credits</span>
               <h4 class="text-primary-light fw-bold mb-0 line-height-1">84 <span class="text-xs fw-normal text-secondary-light">/ 120 Units</span></h4>
             </div>
           </div>
-          <span class="badge bg-purple-subtle text-purple-800 text-xs px-10 py-6 radius-6 fw-semibold flex-shrink-0 text-nowrap">
+          <span class="badge bg-purple-subtle text-purple-800 border border-purple-200 text-xs px-10 py-6 radius-6 fw-semibold flex-shrink-0 text-nowrap accumulated-credits-badge">
             18 Units Enrolled
           </span>
         </div>
@@ -137,3 +137,22 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.accumulated-credits-card {
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+:global([data-theme="dark"]) .accumulated-credits-card,
+:global([data-bs-theme="dark"]) .accumulated-credits-card {
+  background-color: rgba(168, 85, 247, 0.1) !important;
+  border-color: rgba(168, 85, 247, 0.25) !important;
+}
+
+:global([data-theme="dark"]) .accumulated-credits-badge,
+:global([data-bs-theme="dark"]) .accumulated-credits-badge {
+  background-color: rgba(168, 85, 247, 0.22) !important;
+  color: #E9D8FD !important;
+  border-color: rgba(168, 85, 247, 0.4) !important;
+}
+</style>

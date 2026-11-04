@@ -315,6 +315,14 @@
   --lilac-100: #EBD7FF0f;
   --success-100: #DCFCE70f;
   --danger-100: rgba(239, 71, 112, 0.1490196078);
+  --purple-50: rgba(168, 11, 228, 0.08);
+  --purple-100: rgba(168, 11, 228, 0.18);
+  --purple-200: rgba(168, 11, 228, 0.32);
+  --purple-700: #D08AF6;
+  --purple-800: #E4B7FB;
+  --purple-900: #F3E8FF;
+  --success-700: #4ADE80;
+  --success-800: #86EFAC;
   --border-color: #d1d5db33;
   --neutral-40: #323d4e;
   --neutral-50: #1B2431;
@@ -15031,4 +15039,56 @@ table.dataTable td.dt-type-date {
 [data-bs-theme=dark] .btn-light span {
   color: #111827 !important;
 }
+
+/* ==========================================================================
+   Purple Theme & Subtle Badges Night View Contrast Guards
+   Ensures purple cards, subtle backgrounds, and badges adapt properly in dark mode
+   ========================================================================== */
+.bg-purple-subtle {
+  background-color: var(--purple-50, #FAEFFF) !important;
+  color: var(--purple-800, #5E0089) !important;
+}
+
+[data-theme=dark] .bg-purple-50,
+[data-bs-theme=dark] .bg-purple-50 {
+  background-color: rgba(168, 11, 228, 0.08) !important;
+}
+
+[data-theme=dark] .border-purple-100,
+[data-bs-theme=dark] .border-purple-100 {
+  border-color: rgba(168, 11, 228, 0.2) !important;
+}
+
+[data-theme=dark] .border-purple-200,
+[data-bs-theme=dark] .border-purple-200 {
+  border-color: rgba(168, 11, 228, 0.35) !important;
+}
+
+[data-theme=dark] .bg-purple-subtle,
+[data-bs-theme=dark] .bg-purple-subtle {
+  background-color: rgba(168, 11, 228, 0.22) !important;
+  color: #E4B7FB !important;
+}
+
+[data-theme=dark] .text-purple-700,
+[data-bs-theme=dark] .text-purple-700 {
+  color: #D08AF6 !important;
+}
+
+[data-theme=dark] .text-purple-800,
+[data-bs-theme=dark] .text-purple-800 {
+  color: #E4B7FB !important;
+}
+
+[data-theme=dark] .bg-success-subtle,
+[data-bs-theme=dark] .bg-success-subtle {
+  background-color: rgba(34, 197, 94, 0.16) !important;
+  color: #86EFAC !important;
+}
+
+[data-theme=dark] .text-success-800,
+[data-bs-theme=dark] .text-success-800 {
+  color: #86EFAC !important;
+}
+
 
