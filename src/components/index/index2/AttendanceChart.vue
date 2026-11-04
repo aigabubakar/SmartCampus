@@ -15,7 +15,7 @@
         <div class="text-center">
           <div id="userOverviewDonutChart" class="apexcharts-tooltip-z-none"></div>
         </div>
-        <div class="d-flex gap-12 justify-content-around mt-24">
+        <div class="d-flex flex-wrap gap-12 justify-content-around mt-20">
           <div class="d-flex align-items-start gap-8">
             <span class="w-6-px h-16-px bg-success-500 rounded-pill position-relative mt-8">
             </span>

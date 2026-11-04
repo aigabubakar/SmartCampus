@@ -61,12 +61,12 @@
       <div class="mt-24">
         <div class="row gy-4">
           <!-- Student Profile & Academic Gauge -->
-          <div class="col-xxl-6">
+          <div class="col-xxl-7 col-xl-7 col-lg-12">
             <StudentProfile />
           </div>
 
           <!-- Attendance Compliance & 75% Threshold -->
-          <div class="col-xxl-6">
+          <div class="col-xxl-5 col-xl-5 col-lg-12">
             <AttendanceChart />
           </div>
 

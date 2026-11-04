@@ -4,8 +4,8 @@
       
       <!-- Left: Student Academic Identity Card -->
       <div
-        class="radius-12 overflow-hidden position-relative z-1 py-24 px-20 text-center d-flex justify-content-center align-items-center flex-grow-1"
-        style="background: linear-gradient(135deg, #134e48 0%, #25A194 100%); min-width: 250px; max-width: 320px;"
+        class="radius-12 overflow-hidden position-relative z-1 py-24 px-20 text-center d-flex justify-content-center align-items-center flex-shrink-0"
+        style="background: linear-gradient(135deg, #134e48 0%, #25A194 100%); width: 255px; min-width: 240px; max-width: 270px;"
       >
         <div class="w-100 d-flex flex-column align-items-center">
           <!-- Prominent Circular Portrait Container -->
@@ -65,53 +65,53 @@
       </div>
 
       <!-- Right: Academic Progress & Compliance Overview -->
-      <div class="d-flex flex-column gap-16 flex-grow-1 justify-content-between">
+      <div class="d-flex flex-column gap-14 flex-grow-1 justify-content-between min-w-0">
         
         <!-- Cumulative GPA -->
-        <div class="radius-10 py-16 px-20 d-flex align-items-center justify-content-between bg-primary-50 border border-primary-100">
-          <div class="d-flex align-items-center gap-12">
+        <div class="radius-10 py-16 px-20 d-flex flex-wrap align-items-center justify-content-between gap-12 bg-primary-50 border border-primary-100">
+          <div class="d-flex align-items-center gap-12 flex-grow-1 min-w-0">
             <div class="w-44-px h-44-px d-inline-flex justify-content-center align-items-center rounded-circle bg-primary-600 text-white text-xl flex-shrink-0">
               <iconify-icon icon="solar:award-bold"></iconify-icon>
             </div>
-            <div>
-              <span class="text-secondary-light text-xs fw-semibold d-block">Cumulative GPA (CGPA)</span>
-              <h4 class="text-primary-light fw-bold mb-0">3.82 <span class="text-xs fw-normal text-secondary-light">/ 5.00</span></h4>
+            <div class="min-w-0">
+              <span class="text-secondary-light text-xs fw-semibold d-block text-truncate mb-2">Cumulative GPA (CGPA)</span>
+              <h4 class="text-primary-light fw-bold mb-0 line-height-1">3.82 <span class="text-xs fw-normal text-secondary-light">/ 5.00</span></h4>
             </div>
           </div>
-          <span class="badge bg-success-subtle text-success-800 text-xs px-8 py-4 radius-6 fw-bold">
+          <span class="badge bg-success-subtle text-success-800 text-xs px-10 py-6 radius-6 fw-bold flex-shrink-0 text-nowrap">
             First Class Standing
           </span>
         </div>
 
         <!-- Earned Credits -->
-        <div class="radius-10 py-16 px-20 d-flex align-items-center justify-content-between bg-purple-50 border border-purple-100">
-          <div class="d-flex align-items-center gap-12">
+        <div class="radius-10 py-16 px-20 d-flex flex-wrap align-items-center justify-content-between gap-12 bg-purple-50 border border-purple-100">
+          <div class="d-flex align-items-center gap-12 flex-grow-1 min-w-0">
             <div class="w-44-px h-44-px d-inline-flex justify-content-center align-items-center rounded-circle bg-purple-600 text-white text-xl flex-shrink-0">
               <iconify-icon icon="solar:book-bookmark-bold"></iconify-icon>
             </div>
-            <div>
-              <span class="text-secondary-light text-xs fw-semibold d-block">Accumulated Credits</span>
-              <h4 class="text-primary-light fw-bold mb-0">84 <span class="text-xs fw-normal text-secondary-light">/ 120 Units</span></h4>
+            <div class="min-w-0">
+              <span class="text-secondary-light text-xs fw-semibold d-block text-truncate mb-2">Accumulated Credits</span>
+              <h4 class="text-primary-light fw-bold mb-0 line-height-1">84 <span class="text-xs fw-normal text-secondary-light">/ 120 Units</span></h4>
             </div>
           </div>
-          <span class="badge bg-purple-subtle text-purple-800 text-xs px-8 py-4 radius-6 fw-semibold">
+          <span class="badge bg-purple-subtle text-purple-800 text-xs px-10 py-6 radius-6 fw-semibold flex-shrink-0 text-nowrap">
             18 Units Enrolled
           </span>
         </div>
 
         <!-- Attendance Clearance -->
-        <div class="radius-10 py-16 px-20 d-flex align-items-center justify-content-between bg-success-50 border border-success-100">
-          <div class="d-flex align-items-center gap-12">
+        <div class="radius-10 py-16 px-20 d-flex flex-wrap align-items-center justify-content-between gap-12 bg-success-50 border border-success-100">
+          <div class="d-flex align-items-center gap-12 flex-grow-1 min-w-0">
             <div class="w-44-px h-44-px d-inline-flex justify-content-center align-items-center rounded-circle bg-success-600 text-white text-xl flex-shrink-0">
               <iconify-icon icon="solar:fingerprint-bold"></iconify-icon>
             </div>
-            <div>
-              <span class="text-secondary-light text-xs fw-semibold d-block">Lecture Attendance Compliance</span>
-              <h4 class="text-primary-light fw-bold mb-0">88.4%</h4>
+            <div class="min-w-0">
+              <span class="text-secondary-light text-xs fw-semibold d-block text-truncate mb-2">Lecture Attendance Compliance</span>
+              <h4 class="text-primary-light fw-bold mb-0 line-height-1">88.4%</h4>
             </div>
           </div>
-          <span class="badge bg-success text-white text-xs px-8 py-4 radius-6 fw-bold">
-            Exam Cleared (>75%)
+          <span class="badge bg-success text-white text-xs px-10 py-6 radius-6 fw-bold flex-shrink-0 text-nowrap">
+            Exam Cleared (&gt;75%)
           </span>
         </div>
 
