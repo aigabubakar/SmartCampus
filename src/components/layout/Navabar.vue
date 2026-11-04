@@ -14,33 +14,31 @@
       </div>
       <div class="col-auto">
         <div class="d-flex flex-wrap align-items-center gap-3">
+          <!-- 1. Theme Toggle Button -->
           <button type="button" 
-            class="w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
-            aria-label="Dark & Light Mode Button" @click="toggleTheme">
-             <i class="text-xl" :class="isDark ? 'ri-moon-line' : 'ri-sun-line'"></i>
+            class="navbar-action-btn navbar-theme-btn w-40-px h-40-px rounded-circle d-flex justify-content-center align-items-center text-white border-0 cursor-pointer"
+            :class="isDark ? 'navbar-theme-dark' : 'navbar-theme-light'"
+            aria-label="Dark & Light Mode Button" 
+            :title="isDark ? 'Switch to Day Light Mode' : 'Switch to Night Dark Mode'" 
+            @click="toggleTheme">
+             <i class="text-lg text-white" :class="isDark ? 'ri-moon-line' : 'ri-sun-line'"></i>
           </button>
+
+          <!-- 2. Lock Workstation Button -->
           <button type="button" 
-            class="w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center text-secondary-light hover-text-warning-600"
+            class="navbar-action-btn navbar-lock-btn w-40-px h-40-px rounded-circle d-flex justify-content-center align-items-center text-white border-0 cursor-pointer"
             aria-label="Lock Workstation" 
-            title="Lock Workstation" 
+            title="Lock Workstation Session" 
             @click="handleLockScreen">
-             <i class="ri-lock-2-line text-xl"></i>
-          </button>
-          <!-- Quick Logout Button -->
-          <button type="button" 
-            class="navbar-logout-btn w-40-px h-40-px rounded-circle d-flex justify-content-center align-items-center text-white border-0 cursor-pointer"
-            aria-label="Sign Out" 
-            title="Sign Out / Log Out" 
-            @click="handleLogout">
-             <i class="ri-logout-box-r-line text-lg text-white"></i>
+             <i class="ri-lock-2-line text-lg text-white"></i>
           </button>
 
           <div class="dropdown">
             <button
-              class="has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center position-relative"
-              type="button" data-bs-toggle="dropdown" aria-label="Notification Button">
-              <iconify-icon icon="iconoir:bell" class="text-primary-light text-xl"></iconify-icon>
-              <span class="w-8-px h-8-px bg-danger-600 position-absolute end-0 top-0 rounded-circle mt-2 me-2"></span>
+              class="navbar-action-btn navbar-notif-btn has-indicator w-40-px h-40-px rounded-circle d-flex justify-content-center align-items-center position-relative text-white border-0 cursor-pointer"
+              type="button" data-bs-toggle="dropdown" aria-label="Notification Button" title="Campus Circulars & Notifications">
+              <i class="ri-notification-3-line text-lg text-white"></i>
+              <span class="w-10-px h-10-px bg-danger-600 border border-white border-2 position-absolute end-0 top-0 rounded-circle mt-1 me-1"></span>
             </button>
             <div class="dropdown-menu to-top dropdown-menu-lg p-0">
               <div
@@ -138,6 +136,15 @@
             </div>
           </div><!-- Notification dropdown end -->
 
+          <!-- 4. Quick Logout Button -->
+          <button type="button" 
+            class="navbar-action-btn navbar-logout-btn w-40-px h-40-px rounded-circle d-flex justify-content-center align-items-center text-white border-0 cursor-pointer"
+            aria-label="Sign Out" 
+            title="Sign Out / Log Out" 
+            @click="handleLogout">
+             <i class="ri-logout-box-r-line text-lg text-white"></i>
+          </button>
+
         </div>
       </div>
     </div>
@@ -206,22 +213,67 @@ export default {
 </script>
 
 <style scoped>
-.navbar-logout-btn {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
-  transition: all 0.2s ease-in-out;
+/* Base action button micro-interactions */
+.navbar-action-btn {
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
-.navbar-logout-btn:hover {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
-  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.55);
-  transform: translateY(-1px) scale(1.05);
+.navbar-action-btn:hover {
+  transform: translateY(-2px) scale(1.05);
 }
 
-.navbar-logout-btn:active {
+.navbar-action-btn:active {
   transform: translateY(0) scale(0.97);
-  box-shadow: 0 1px 4px rgba(220, 38, 38, 0.4);
+}
+
+/* 1. Theme Toggle Button (Amber in light mode, Twilight Indigo in dark mode) */
+.navbar-theme-light {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.38);
+}
+.navbar-theme-light:hover {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%) !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.55);
+}
+
+.navbar-theme-dark {
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%) !important;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+.navbar-theme-dark:hover {
+  background: linear-gradient(135deg, #818cf8 0%, #4f46e5 100%) !important;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.58);
+}
+
+/* 2. Lock Workstation Button (Security Tangerine / Orange) */
+.navbar-lock-btn {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.38);
+}
+.navbar-lock-btn:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #c2410c 100%) !important;
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.55);
+}
+
+/* 3. Notifications Button (Royal Azure Blue) */
+.navbar-notif-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.38);
+}
+.navbar-notif-btn:hover {
+  background: linear-gradient(135deg, #60a5fa 0%, #1e40af 100%) !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.55);
+}
+
+/* 4. Quick Logout Button (Emergency Crimson Red) */
+.navbar-logout-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.38);
+}
+.navbar-logout-btn:hover {
+  background: linear-gradient(135deg, #f87171 0%, #b91c1c 100%) !important;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.55);
 }
 </style>
 
