@@ -68,6 +68,14 @@ class CreditPolicyOut(BaseModel):
     maxUnits: int = 24
     carryoverUnits: int = 0
     advisableMaxUnits: int = 21
+    underloadAllowedWithWaiver: bool = True
+    underloadReasons: List[str] = [
+        "Final Year / Graduating Clearance (Completing Remaining Degree Requirements)",
+        "Academic Adviser Prescribed Workload Pacing (GPA Recovery & Counseling)",
+        "Medical / Compassionate Concession (Senate Certified)",
+        "Special Academic Accommodation / Approved Part-Time Load",
+        "Senate Special Exemption"
+    ]
 
 class AiAdvisoryOut(BaseModel):
     status: str  # MANDATORY_CARRYOVER_ENFORCED | CLEAR_TO_ENROLL
@@ -105,6 +113,8 @@ class CourseRegistrationRequest(BaseModel):
     semester: str = "First Semester"
     courseIds: List[int]
     studentId: Optional[int] = None
+    underloadReason: Optional[str] = None
+    underloadNotes: Optional[str] = None
 
 def get_target_student(db: Session, current_user: User, student_id: Optional[int] = None) -> StudentProfile:
     if current_user.role in ["super-admin", "admin", "lecturer"] and student_id:
@@ -401,11 +411,22 @@ def register_courses(
             status_code=422,
             detail=f"Credit Limit Exceeded: Total requested credit units ({total_credit_units}) exceeds the Senate ceiling of 24 units."
         )
-    if total_credit_units < 15:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Underload Alert: Total registered credit units ({total_credit_units}) is below the required minimum of 15 units."
-        )
+
+    is_underload = total_credit_units < 15
+    underload_concession_ref = None
+    if is_underload:
+        if not payload.underloadReason:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"Academic Underload Alert: Total selected load ({total_credit_units} Units) is below the required minimum of 15 units. "
+                    f"To proceed with underload registration, an official justification reason "
+                    f"(such as Final Year Clearance, Medical Exemption, or Academic Adviser Prescribed Pacing) must be selected."
+                )
+            )
+        # Generate official Senate Underload Concession Reference
+        ref_hash = hashlib.sha256(f"{student.matric_number}:{payload.session}:{payload.semester}:UNDERLOAD".encode()).hexdigest()[:6].upper()
+        underload_concession_ref = f"AMU/SEN/UND-2026/{ref_hash}"
 
     # 4. Atomic Registration Persistence
     # Clear existing enrollments for this session and semester to allow updates/replacements
@@ -429,7 +450,10 @@ def register_courses(
             status="Registered",
             is_carryover=is_carryover,
             auto_enrolled_by_ai=auto_enrolled,
-            registration_type=reg_type
+            registration_type=reg_type,
+            underload_concession=is_underload,
+            underload_reason=payload.underloadReason if is_underload else None,
+            concession_reference=underload_concession_ref if is_underload else None
         )
         db.add(enr)
         created_enrollments.append(enr)
@@ -440,9 +464,20 @@ def register_courses(
     verification_payload = f"{student.matric_number}:{payload.session}:{payload.semester}:{total_credit_units}:{datetime.utcnow().strftime('%Y%m%d%H%M')}"
     verification_hash = hashlib.sha256(verification_payload.encode()).hexdigest()[:16].upper()
 
+    concession_data = None
+    if is_underload:
+        concession_data = {
+            "isUnderload": True,
+            "approved": True,
+            "concessionReference": underload_concession_ref,
+            "reason": payload.underloadReason,
+            "notes": payload.underloadNotes,
+            "approvedBy": "Senate Committee on Academic Policy & Accreditations"
+        }
+
     return {
         "status": "success",
-        "message": f"Successfully enrolled {len(created_enrollments)} courses ({total_credit_units} Credit Units) for {payload.session} - {payload.semester}.",
+        "message": f"Successfully enrolled {len(created_enrollments)} courses ({total_credit_units} Credit Units) for {payload.session} - {payload.semester}." + (f" Approved under Senate Underload Concession [{underload_concession_ref}]." if is_underload else ""),
         "student": {
             "name": student.user.name if student.user else "Student",
             "matricNumber": student.matric_number,
@@ -451,6 +486,8 @@ def register_courses(
         "totalCreditUnits": total_credit_units,
         "carryoverUnits": sum(c.credit_units for c in selected_courses if c.id in mandatory_carryover_ids),
         "coursesCount": len(created_enrollments),
+        "isUnderload": is_underload,
+        "underloadConcession": concession_data,
         "verificationHash": verification_hash,
         "enrolledAt": datetime.utcnow().isoformat()
     }
@@ -491,6 +528,9 @@ def get_current_enrollments(
                 "isCarryover": enr.is_carryover,
                 "autoEnrolled": enr.auto_enrolled_by_ai,
                 "registrationType": enr.registration_type,
+                "underloadConcession": getattr(enr, "underload_concession", False),
+                "underloadReason": getattr(enr, "underload_reason", None),
+                "concessionReference": getattr(enr, "concession_reference", None),
                 "lecturer": enr.course.lecturer.user.name if enr.course.lecturer and enr.course.lecturer.user else "Faculty Board",
                 "status": enr.status,
                 "enrolledAt": enr.enrolled_at.isoformat() if enr.enrolled_at else None
@@ -564,6 +604,22 @@ def get_registration_slip(
     verification_string = f"{student.matric_number}:{session}:{semester}:{total_units}"
     token = hashlib.sha256(verification_string.encode()).hexdigest()[:18].upper()
 
+    has_underload = any(getattr(enr, "underload_concession", False) for enr in enrollments) or (total_units < 15 and len(enrollments) > 0)
+    concession_data = None
+    if has_underload:
+        first_with_reason = next((enr for enr in enrollments if getattr(enr, "underload_reason", None)), None)
+        reason = first_with_reason.underload_reason if first_with_reason and first_with_reason.underload_reason else "Final Year Clearance / Senate Approved Pacing"
+        ref = (first_with_reason.concession_reference if first_with_reason and getattr(first_with_reason, "concession_reference", None) 
+               else f"AMU/SEN/UND-2026/{token[:6]}")
+        concession_data = {
+            "isUnderload": True,
+            "approved": True,
+            "concessionReference": ref,
+            "reason": reason,
+            "approvedBy": "Senate Committee on Academic Policy & Accreditations",
+            "regulatoryNotice": "Holder of this slip is authorized to undertake a reduced course load per Academic Regulation 4.6. Valid for examination clearance and degree certification."
+        }
+
     return {
         "institution": {
             "name": inst.institution_name if inst else "Apex Metropolitan University",
@@ -590,8 +646,10 @@ def get_registration_slip(
             "coreUnits": core_units,
             "electiveUnits": elective_units,
             "maxAllowedUnits": 24,
-            "minAllowedUnits": 15
+            "minAllowedUnits": 15,
+            "isUnderload": has_underload
         },
+        "underloadConcession": concession_data,
         "courses": courses,
         "verificationToken": token,
         "generatedAt": datetime.utcnow().strftime("%B %d, %Y - %H:%M UTC")

@@ -37,6 +37,9 @@ class CourseEnrollment(Base):
     is_carryover = Column(Boolean, default=False)
     auto_enrolled_by_ai = Column(Boolean, default=False)
     registration_type = Column(String(50), default="Core Regular")  # Carryover (Auto-Enrolled), Core Regular, Elective
+    underload_concession = Column(Boolean, default=False)
+    underload_reason = Column(String(255), nullable=True)
+    concession_reference = Column(String(100), nullable=True)
     enrolled_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships

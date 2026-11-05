@@ -77,29 +77,76 @@ def run_tests():
     print(f"  [PASS] Enrollment confirmed! Registered: {reg_data['coursesCount']} courses, {reg_data['totalCreditUnits']} Units (Carryover Units: {reg_data['carryoverUnits']})")
     print(f"  Verification Hash: {reg_data['verificationHash']}")
 
-    # 5. Drop Protection Test: Attempting to drop mandatory carryover
-    print("\n[Step 5] Testing Senate protection: Attempting to drop mandatory carryover...")
+    # 5. Underload Test A: Attempting registration < 15 units WITHOUT underload justification
+    print("\n[Step 5] Testing Underload Alert: Attempting registration (<15 units) without justification...")
+    underload_course_ids = [mth201_id, current_courses[0]["id"]] # 3 units + 3 units = 6 units
+    underload_fail_resp = requests.post(
+        f"{BASE_URL}/enrollment/register",
+        headers=headers,
+        json={
+            "session": "2026/2027",
+            "semester": "First Semester",
+            "courseIds": underload_course_ids
+        }
+    )
+    assert underload_fail_resp.status_code == 422, f"Expected 422, got: {underload_fail_resp.status_code}"
+    print(f"  [PASS] Underload blocked without justification: {underload_fail_resp.json()['detail']}")
+
+    # 6. Underload Test B: Submitting registration < 15 units WITH Senate Underload Concession reason
+    print("\n[Step 6] Testing Underload Concession Waiver: Registering 6 units with Senate justification...")
+    underload_pass_resp = requests.post(
+        f"{BASE_URL}/enrollment/register",
+        headers=headers,
+        json={
+            "session": "2026/2027",
+            "semester": "First Semester",
+            "courseIds": underload_course_ids,
+            "underloadReason": "Final Year / Graduating Clearance (Completing Remaining Degree Requirements)",
+            "underloadNotes": "Approved by Level Adviser Prof. A. Finch for final semester graduation clearance."
+        }
+    )
+    assert underload_pass_resp.status_code == 200, f"Expected 200 with concession, got: {underload_pass_resp.text}"
+    underload_data = underload_pass_resp.json()
+    assert underload_data["isUnderload"] is True, "Expected isUnderload=True"
+    assert underload_data["underloadConcession"] is not None, "Expected underloadConcession object"
+    concession_ref = underload_data["underloadConcession"]["concessionReference"]
+    print(f"  [PASS] Underload concession granted! Senate Ref: {concession_ref}")
+    print(f"  Reason: {underload_data['underloadConcession']['reason']}")
+
+    # 7. Underload Slip Verification
+    print("\n[Step 7] Checking Course Slip for Senate Underload Concession Seal...")
+    underload_slip_resp = requests.get(f"{BASE_URL}/enrollment/slip", headers=headers)
+    assert underload_slip_resp.status_code == 200
+    underload_slip = underload_slip_resp.json()
+    assert underload_slip["summary"]["isUnderload"] is True
+    assert underload_slip["underloadConcession"] is not None
+    assert underload_slip["underloadConcession"]["concessionReference"] == concession_ref
+    print(f"  [PASS] Course Registration Slip stamped with: {underload_slip['underloadConcession']['concessionReference']}")
+    print(f"  Regulatory Notice: {underload_slip['underloadConcession']['regulatoryNotice']}")
+
+    # 8. Drop Protection Test: Attempting to drop mandatory carryover
+    print("\n[Step 8] Testing Senate protection: Attempting to drop mandatory carryover...")
     drop_carryover_resp = requests.delete(f"{BASE_URL}/enrollment/drop/{mth201_id}", headers=headers)
     assert drop_carryover_resp.status_code == 422, f"Expected 422, got: {drop_carryover_resp.status_code}"
     print(f"  [PASS] Drop blocked as expected: {drop_carryover_resp.json()['detail']}")
 
-    # 6. Official Registration Slip Test
-    print("\n[Step 6] Fetching Official Course Registration Slip...")
-    slip_resp = requests.get(f"{BASE_URL}/enrollment/slip", headers=headers)
-    assert slip_resp.status_code == 200, f"Slip fetch failed: {slip_resp.text}"
-    slip_data = slip_resp.json()
-    print(f"  Institution: {slip_data['institution']['name']}")
-    print(f"  Total Registered Units: {slip_data['summary']['totalCreditUnits']}")
-    print(f"  Carryover Units: {slip_data['summary']['carryoverUnits']}")
-    print(f"  Verification Token: {slip_data['verificationToken']}")
-    print("  Courses Breakdown:")
-    for c in slip_data["courses"]:
-        tag = "[CARRYOVER]" if c["isCarryover"] else f"[{c['category']}]"
-        print(f"    - {c['code']} {tag}: {c['title']} ({c['creditUnits']} Units)")
-    print("  [PASS] Official slip generated with verification token and signature blocks.")
+    # 9. Restore Full Balanced Load (Carryover + 5 current courses = 17 Units)
+    print("\n[Step 9] Restoring full balanced curriculum (Carryover + 5 fresh courses = 17 Units)...")
+    full_load_ids = [mth201_id] + [c["id"] for c in current_courses[:5]]
+    full_resp = requests.post(
+        f"{BASE_URL}/enrollment/register",
+        headers=headers,
+        json={
+            "session": "2026/2027",
+            "semester": "First Semester",
+            "courseIds": full_load_ids
+        }
+    )
+    assert full_resp.status_code == 200
+    print(f"  [PASS] Restored balanced registration: {full_resp.json()['totalCreditUnits']} Units.")
 
     print("\n==================================================")
-    print("ALL AI ENROLLMENT & CARRYOVER TESTS PASSED (100%)!")
+    print("ALL AI ENROLLMENT & UNDERLOAD CONCESSION TESTS PASSED (100%)!")
     print("==================================================")
 
 if __name__ == "__main__":

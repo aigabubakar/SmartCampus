@@ -65,6 +65,9 @@ def seed_database():
             ("is_carryover", "BOOLEAN DEFAULT 0"),
             ("auto_enrolled_by_ai", "BOOLEAN DEFAULT 0"),
             ("registration_type", "VARCHAR(50) DEFAULT 'Core Regular'"),
+            ("underload_concession", "BOOLEAN DEFAULT 0"),
+            ("underload_reason", "VARCHAR(255) DEFAULT NULL"),
+            ("concession_reference", "VARCHAR(100) DEFAULT NULL"),
         ]
         for col_name, col_def in new_e_columns:
             if col_name not in existing_e_cols:

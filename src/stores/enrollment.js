@@ -18,6 +18,10 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
     const selectedCategoryFilter = ref('All'); // 'All' | 'Core' | 'Elective'
     const isInterDeptModalOpen = ref(false);
 
+    // Underload Concession & Waiver State
+    const underloadReason = ref('');
+    const underloadNotes = ref('');
+
     const student = computed(() => auditData.value?.student || null);
     const session = computed(() => auditData.value?.session || '2026/2027');
     const semester = computed(() => auditData.value?.semester || 'First Semester');
@@ -27,6 +31,16 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
     const currentEnrollments = computed(() => auditData.value?.currentEnrollments || []);
     const creditPolicy = computed(() => auditData.value?.creditPolicy || { minUnits: 15, maxUnits: 24, carryoverUnits: 0, advisableMaxUnits: 21 });
     const aiAdvisory = computed(() => auditData.value?.aiAdvisory || null);
+
+    const underloadReasonsList = computed(() => {
+        return creditPolicy.value?.underloadReasons || [
+            'Final Year / Graduating Clearance (Completing Remaining Degree Requirements)',
+            'Academic Adviser Prescribed Workload Pacing (GPA Recovery & Counseling)',
+            'Medical / Compassionate Concession (Senate Certified)',
+            'Special Academic Accommodation / Approved Part-Time Load',
+            'Senate Special Exemption'
+        ];
+    });
 
     // Set of mandatory carryover course IDs
     const carryoverIdSet = computed(() => new Set(mandatoryCarryovers.value.map(c => c.id)));
@@ -82,13 +96,14 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
     });
 
     const canSubmit = computed(() => {
-        return (
-            selectedCourseIds.value.length > 0 &&
-            !isUnderload.value &&
-            !isOverload.value &&
-            allCarryoversSelected.value &&
-            !isSubmitting.value
-        );
+        if (selectedCourseIds.value.length === 0 || isSubmitting.value) return false;
+        if (!allCarryoversSelected.value) return false;
+        if (isOverload.value) return false;
+        // Underload situation requires justification reason
+        if (isUnderload.value) {
+            return !!underloadReason.value && underloadReason.value.trim().length > 0;
+        }
+        return true;
     });
 
     // Ensure all mandatory carryovers are always included and locked
@@ -253,8 +268,11 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
         if (!canSubmit.value) {
             if (!allCarryoversSelected.value) {
                 toastStore.error('Mandatory carryover courses must be registered first!');
-            } else if (isUnderload.value) {
-                toastStore.warning(`Minimum allowable course load is ${creditPolicy.value?.minUnits} units. Please add fresh courses.`);
+            } else if (isUnderload.value && !underloadReason.value) {
+                toastStore.warning(
+                    `Your selected load (${totalSelectedUnits.value} Units) is below 15 units. Please select an Academic Underload Concession reason to submit.`,
+                    'Underload Concession Required'
+                );
             } else if (isOverload.value) {
                 toastStore.error(`Maximum allowable course load is ${creditPolicy.value?.maxUnits} units. Please remove excess courses.`);
             }
@@ -273,7 +291,9 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
                 body: JSON.stringify({
                     session: session.value,
                     semester: semester.value,
-                    courseIds: selectedCourseIds.value
+                    courseIds: selectedCourseIds.value,
+                    underloadReason: isUnderload.value ? underloadReason.value : null,
+                    underloadNotes: isUnderload.value ? underloadNotes.value : null
                 })
             });
 
@@ -283,7 +303,14 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
             }
 
             const result = await res.json();
-            toastStore.success(result.message || 'Course registration completed successfully!');
+            if (result.isUnderload) {
+                toastStore.success(
+                    `Course registration submitted under Senate Underload Concession [${result.underloadConcession?.concessionReference}].`,
+                    'Underload Concession Approved'
+                );
+            } else {
+                toastStore.success(result.message || 'Course registration completed successfully!');
+            }
             
             // Switch to official slip view
             await fetchSlip();
@@ -374,6 +401,9 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
         isOverload,
         allCarryoversSelected,
         canSubmit,
+        underloadReason,
+        underloadNotes,
+        underloadReasonsList,
         isCarryoverLocked,
         addCourse,
         removeCourse,

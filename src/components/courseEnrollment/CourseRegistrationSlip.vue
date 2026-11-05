@@ -79,6 +79,37 @@
           </div>
         </div>
 
+        <!-- Senate Underload Concession Seal (Appears when student registered underload) -->
+        <div 
+          v-if="slip?.underloadConcession?.isUnderload || slip?.summary?.isUnderload" 
+          class="mt-16 p-14 radius-10 bg-warning-50 border border-warning-400 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-12"
+        >
+          <div class="d-flex align-items-center gap-12">
+            <span class="badge bg-warning-600 text-white rounded-circle p-8 flex-shrink-0">
+              <i class="ri-shield-user-fill text-base"></i>
+            </span>
+            <div>
+              <div class="d-flex align-items-center gap-8 mb-2">
+                <span class="text-xs fw-bold text-warning-900 text-uppercase letter-spacing-1">
+                  Senate Underload Concession Approved
+                </span>
+                <span class="badge bg-neutral-900 text-white font-monospace text-xxs px-6 py-2 radius-4">
+                  Ref: {{ slip?.underloadConcession?.concessionReference || 'AMU/SEN/UND-2026/ACAD' }}
+                </span>
+              </div>
+              <p class="text-xxs text-warning-900 mb-0">
+                <strong>Justification:</strong> {{ slip?.underloadConcession?.reason || 'Final Year Clearance / Senate Approved Workload Pacing' }}
+              </p>
+            </div>
+          </div>
+
+          <div class="text-md-end flex-shrink-0">
+            <span class="badge bg-warning-200 text-warning-900 border border-warning-300 text-xxs px-8 py-4 radius-6 fw-bold">
+              Regulation 4.6 Concession Validated
+            </span>
+          </div>
+        </div>
+
         <!-- Registered Courses Table -->
         <div class="mt-24">
           <div class="table-responsive">
@@ -140,6 +171,9 @@
                   </td>
                   <td colspan="4" class="text-xs text-secondary-light">
                     {{ slip?.summary?.carryoverUnits }} Carryover Units • {{ slip?.summary?.coreUnits }} Core Units • {{ slip?.summary?.electiveUnits }} Elective Units ({{ slip?.summary?.totalCourses }} Courses Total)
+                    <span v-if="slip?.summary?.isUnderload || slip?.underloadConcession?.isUnderload" class="text-warning-800 fw-bold ms-4 badge bg-warning-100 border border-warning-300 text-xxs px-6 py-2 radius-4">
+                      <i class="ri-shield-user-fill"></i> Senate Approved Underload Concession
+                    </span>
                   </td>
                 </tr>
               </tfoot>

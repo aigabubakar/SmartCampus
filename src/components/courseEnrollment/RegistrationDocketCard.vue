@@ -167,6 +167,58 @@
         </div>
       </div>
 
+      <!-- Section C: Academic Underload Concession Request (Appears when units < 15) -->
+      <div v-if="enrollmentStore.isUnderload && enrollmentStore.selectedCourses.length > 0" class="mt-16 p-14 radius-12 bg-warning-50 border border-warning-300">
+        <div class="d-flex align-items-start gap-8 mb-8">
+          <i class="ri-alert-fill text-warning-700 text-lg flex-shrink-0 mt-2"></i>
+          <div>
+            <h6 class="text-xs fw-bold text-warning-900 mb-2">Senate Academic Underload Notice</h6>
+            <p class="text-xxs text-warning-800 mb-0 leading-relaxed">
+              Your selected load (<strong>{{ enrollmentStore.totalSelectedUnits }} Units</strong>) is below the standard 15-unit semester minimum. Per Senate Regulation 4.6, you must select an approved concession reason to submit this registration.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-10">
+          <label class="form-label text-xxs fw-bold text-neutral-800 mb-4 d-flex align-items-center justify-content-between">
+            <span>Select Underload Justification:</span>
+            <span class="badge bg-warning-200 text-warning-900 text-xxs px-6 py-1 radius-4">Required</span>
+          </label>
+          <select 
+            v-model="enrollmentStore.underloadReason"
+            class="form-select form-select-sm text-xs radius-8 border-warning-400 bg-white shadow-none"
+          >
+            <option value="" disabled>-- Select Official Senate Reason --</option>
+            <option 
+              v-for="reason in enrollmentStore.underloadReasonsList" 
+              :key="reason" 
+              :value="reason"
+            >
+              {{ reason }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mt-8">
+          <label class="form-label text-xxs text-secondary-light mb-2">
+            Adviser Endorsement Notes (Optional):
+          </label>
+          <input 
+            type="text" 
+            v-model="enrollmentStore.underloadNotes"
+            placeholder="e.g., Approved for final semester degree completion"
+            class="form-control form-control-sm text-xxs radius-8 border-warning-300 bg-white"
+          />
+        </div>
+
+        <div v-if="enrollmentStore.underloadReason" class="mt-8 p-6 radius-6 bg-success-50 border border-success-200 d-flex align-items-center gap-6">
+          <i class="ri-checkbox-circle-fill text-success-600 text-xs"></i>
+          <span class="text-xxs text-success-800 fw-medium">
+            Concession attached. Registration authorized for underload submission.
+          </span>
+        </div>
+      </div>
+
       <!-- Docket Unit Accounting Breakdown -->
       <div class="mt-20 p-12 radius-10 bg-neutral-50 border border-neutral-200 text-xs d-flex flex-column gap-6">
         <div class="d-flex justify-content-between text-secondary-light">
@@ -189,13 +241,20 @@
       <div class="mt-20 d-flex flex-column gap-8">
         <button 
           type="button" 
-          class="btn btn-primary w-100 py-12 radius-10 fw-bold d-flex align-items-center justify-content-center gap-8 shadow-sm"
+          class="btn w-100 py-12 radius-10 fw-bold d-flex align-items-center justify-content-center gap-8 shadow-sm"
+          :class="enrollmentStore.isUnderload ? 'btn-warning text-neutral-900' : 'btn-primary'"
           :disabled="!enrollmentStore.canSubmit || enrollmentStore.isSubmitting"
           @click="handleSubmit"
         >
           <span v-if="enrollmentStore.isSubmitting" class="spinner-border spinner-border-sm" role="status"></span>
+          <i v-else-if="enrollmentStore.isUnderload" class="ri-shield-user-fill text-lg"></i>
           <i v-else class="ri-shield-check-fill text-lg"></i>
-          <span>{{ enrollmentStore.isSubmitting ? 'Registering...' : 'Finalize & Submit Course Form' }}</span>
+          <span>
+            {{ enrollmentStore.isSubmitting 
+                ? 'Submitting...' 
+                : (enrollmentStore.isUnderload ? 'Submit with Underload Concession' : 'Finalize & Submit Course Form') 
+            }}
+          </span>
         </button>
 
         <div class="d-flex align-items-center justify-content-between gap-8">
@@ -247,14 +306,22 @@ export default {
 
     const statusBadgeClass = computed(() => {
       if (enrollmentStore.isOverload) return 'bg-danger-600 text-white';
-      if (enrollmentStore.isUnderload) return 'bg-warning-100 text-warning-800 border border-warning-200';
+      if (enrollmentStore.isUnderload) {
+        return enrollmentStore.underloadReason 
+          ? 'bg-warning-500 text-white shadow-xs' 
+          : 'bg-warning-100 text-warning-800 border border-warning-200';
+      }
       if (enrollmentStore.totalSelectedUnits >= 22) return 'bg-info-100 text-info-800 border border-info-200';
       return 'bg-success-100 text-success-700 border border-success-200';
     });
 
     const statusBadgeText = computed(() => {
       if (enrollmentStore.isOverload) return 'Overload Alert (>24)';
-      if (enrollmentStore.isUnderload) return 'Underload (<15)';
+      if (enrollmentStore.isUnderload) {
+        return enrollmentStore.underloadReason 
+          ? 'Underload Concession Ready' 
+          : 'Underload (<15)';
+      }
       if (enrollmentStore.totalSelectedUnits >= 22) return 'Maximum Load';
       return 'Balanced Load';
     });
