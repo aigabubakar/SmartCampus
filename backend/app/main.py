@@ -12,6 +12,7 @@ from app.api.v1.notices import router as notices_router
 from app.api.v1.lecturers import router as lecturers_router
 from app.api.v1.students import router as students_router
 from app.api.v1.courses import router as courses_router
+from app.api.v1.enrollment import router as enrollment_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,9 +22,10 @@ async def lifespan(app: FastAPI):
         # Verify and migrate any missing student columns in SQLite
         from sqlalchemy import text
         with engine.connect() as conn:
+            # 1. Students migration
             res = conn.execute(text("PRAGMA table_info(students)")).fetchall()
             existing_cols = {row[1] for row in res}
-            new_columns = [
+            new_student_columns = [
                 ("phone", "VARCHAR(50) DEFAULT '+1 (555) 234-8901'"),
                 ("address", "VARCHAR(500) DEFAULT 'Plot 14, Academic Hills, University City'"),
                 ("date_of_birth", "VARCHAR(50) DEFAULT '2003-05-14'"),
@@ -33,11 +35,35 @@ async def lifespan(app: FastAPI):
                 ("hall_of_residence", "VARCHAR(255) DEFAULT 'Queen Idia Hall, Block C, Room 14'"),
                 ("bio", "VARCHAR(1000) DEFAULT 'Undergraduate Scholar majoring in Computer Science with a focus on Distributed Systems and Software Architecture.'"),
             ]
-            for col_name, col_def in new_columns:
+            for col_name, col_def in new_student_columns:
                 if col_name not in existing_cols:
                     conn.execute(text(f"ALTER TABLE students ADD COLUMN {col_name} {col_def}"))
-                    conn.commit()
-        print("[SmartCampus API] Database tables and student profile schema verified.")
+
+            # 2. Courses migration
+            res_c = conn.execute(text("PRAGMA table_info(courses)")).fetchall()
+            existing_c_cols = {row[1] for row in res_c}
+            new_c_columns = [
+                ("category", "VARCHAR(50) DEFAULT 'Core Compulsory'"),
+                ("prerequisite_course_code", "VARCHAR(50) DEFAULT NULL"),
+            ]
+            for col_name, col_def in new_c_columns:
+                if col_name not in existing_c_cols:
+                    conn.execute(text(f"ALTER TABLE courses ADD COLUMN {col_name} {col_def}"))
+
+            # 3. Course Enrollments migration
+            res_e = conn.execute(text("PRAGMA table_info(course_enrollments)")).fetchall()
+            existing_e_cols = {row[1] for row in res_e}
+            new_e_columns = [
+                ("is_carryover", "BOOLEAN DEFAULT 0"),
+                ("auto_enrolled_by_ai", "BOOLEAN DEFAULT 0"),
+                ("registration_type", "VARCHAR(50) DEFAULT 'Core Regular'"),
+            ]
+            for col_name, col_def in new_e_columns:
+                if col_name not in existing_e_cols:
+                    conn.execute(text(f"ALTER TABLE course_enrollments ADD COLUMN {col_name} {col_def}"))
+
+            conn.commit()
+        print("[SmartCampus API] Database tables and schema migrations verified.")
     except Exception as e:
         print(f"[SmartCampus API] Database initialization warning: {e}")
     yield
@@ -68,6 +94,7 @@ app.include_router(notices_router, prefix=settings.API_V1_STR)
 app.include_router(lecturers_router, prefix=settings.API_V1_STR)
 app.include_router(students_router, prefix=settings.API_V1_STR)
 app.include_router(courses_router, prefix=settings.API_V1_STR)
+app.include_router(enrollment_router, prefix=settings.API_V1_STR)
 
 # Mount static uploads directory for serving avatars and assets
 from fastapi.staticfiles import StaticFiles

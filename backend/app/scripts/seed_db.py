@@ -45,7 +45,32 @@ def seed_database():
             if col_name not in existing_cols:
                 conn.execute(text(f"ALTER TABLE students ADD COLUMN {col_name} {col_def}"))
                 conn.commit()
-    print("      Tables and student profile schema successfully created or verified.")
+
+        # Migrate courses columns
+        res_c = conn.execute(text("PRAGMA table_info(courses)")).fetchall()
+        existing_c_cols = {row[1] for row in res_c}
+        new_c_columns = [
+            ("category", "VARCHAR(50) DEFAULT 'Core Compulsory'"),
+            ("prerequisite_course_code", "VARCHAR(50) DEFAULT NULL"),
+        ]
+        for col_name, col_def in new_c_columns:
+            if col_name not in existing_c_cols:
+                conn.execute(text(f"ALTER TABLE courses ADD COLUMN {col_name} {col_def}"))
+                conn.commit()
+
+        # Migrate course_enrollments columns
+        res_e = conn.execute(text("PRAGMA table_info(course_enrollments)")).fetchall()
+        existing_e_cols = {row[1] for row in res_e}
+        new_e_columns = [
+            ("is_carryover", "BOOLEAN DEFAULT 0"),
+            ("auto_enrolled_by_ai", "BOOLEAN DEFAULT 0"),
+            ("registration_type", "VARCHAR(50) DEFAULT 'Core Regular'"),
+        ]
+        for col_name, col_def in new_e_columns:
+            if col_name not in existing_e_cols:
+                conn.execute(text(f"ALTER TABLE course_enrollments ADD COLUMN {col_name} {col_def}"))
+                conn.commit()
+    print("      Tables and academic schemas successfully created or verified.")
 
     db = SessionLocal()
     try:
@@ -353,35 +378,80 @@ def seed_database():
         # 4. Courses & Enrollments
         print("[4/6] Seeding Accredited Courses and Enrollments...")
         courses_data = [
+            # 100 Level Courses
             {
-                "code": "CSC 301",
-                "title": "Advanced Data Structures & Algorithms",
+                "code": "CSC 101",
+                "title": "Introduction to Computer Science & Problem Solving",
                 "credit_units": 3,
-                "level": "300 Level",
+                "level": "100 Level",
                 "semester": "First Semester",
                 "department": "Department of Computer Science",
+                "category": "Core Compulsory",
+                "prerequisite_course_code": None,
                 "lecturer_id": lecturer_finch.id,
-                "description": "Analysis of algorithms, balanced search trees, graph theory, NP-completeness."
+                "description": "Foundations of computing, algorithmic thinking, number systems, and computational problem solving."
             },
             {
-                "code": "CSC 303",
-                "title": "Operating Systems & Distributed Architecture",
+                "code": "MTH 101",
+                "title": "Elementary Mathematics I (Algebra & Calculus)",
                 "credit_units": 3,
-                "level": "300 Level",
+                "level": "100 Level",
                 "semester": "First Semester",
-                "department": "Department of Computer Science",
-                "lecturer_id": lecturer_finch.id,
-                "description": "Kernel architecture, process synchronization, memory management, and distributed systems."
+                "department": "Department of Mathematics",
+                "category": "Core Compulsory",
+                "prerequisite_course_code": None,
+                "lecturer_id": None,
+                "description": "Real numbers, set theory, functions, polynomial equations, differentiation and integration fundamentals."
             },
             {
-                "code": "SEN 305",
-                "title": "Software Architecture & Design Patterns",
+                "code": "GST 101",
+                "title": "Use of English & Academic Communication",
                 "credit_units": 2,
-                "level": "300 Level",
+                "level": "100 Level",
                 "semester": "First Semester",
-                "department": "Department of Software Engineering",
-                "lecturer_id": lecturer_davis.id,
-                "description": "Architectural styles, microservices, micro-frontends, domain-driven design."
+                "department": "General Studies Unit",
+                "category": "General Studies",
+                "prerequisite_course_code": None,
+                "lecturer_id": None,
+                "description": "Lexical competence, academic writing, critical reading, logical reasoning, and presentation skills."
+            },
+
+            # 200 Level Courses
+            {
+                "code": "CSC 201",
+                "title": "Computer Programming I (Structured C & Systems)",
+                "credit_units": 3,
+                "level": "200 Level",
+                "semester": "First Semester",
+                "department": "Department of Computer Science",
+                "category": "Core Compulsory",
+                "prerequisite_course_code": "CSC 101",
+                "lecturer_id": lecturer_finch.id,
+                "description": "Structured programming in C, pointers, memory allocation, file I/O, and data structure primitives."
+            },
+            {
+                "code": "MTH 201",
+                "title": "Mathematical Methods I (Linear Algebra & ODE)",
+                "credit_units": 3,
+                "level": "200 Level",
+                "semester": "First Semester",
+                "department": "Department of Mathematics",
+                "category": "Core Compulsory",
+                "prerequisite_course_code": "MTH 101",
+                "lecturer_id": None,
+                "description": "Matrix operations, eigenvalues, eigenvectors, systems of linear equations, and first-order differential equations."
+            },
+            {
+                "code": "CSC 205",
+                "title": "Foundations of Operating Systems & Assembly",
+                "credit_units": 3,
+                "level": "200 Level",
+                "semester": "First Semester",
+                "department": "Department of Computer Science",
+                "category": "Core Compulsory",
+                "prerequisite_course_code": "CSC 101",
+                "lecturer_id": lecturer_finch.id,
+                "description": "Computer architecture, x86 assembly, interrupt handling, CPU registers, and low-level system calls."
             },
             {
                 "code": "ENG 203",
@@ -390,8 +460,108 @@ def seed_database():
                 "level": "200 Level",
                 "semester": "First Semester",
                 "department": "Mechanical Engineering",
+                "category": "Core Compulsory",
+                "prerequisite_course_code": None,
                 "lecturer_id": None,
                 "description": "Laws of thermodynamics, entropy, power cycles, and heat engine efficiencies."
+            },
+
+            # 300 Level Courses (Current Level for Sophia & David)
+            {
+                "code": "CSC 301",
+                "title": "Advanced Data Structures & Algorithms",
+                "credit_units": 3,
+                "level": "300 Level",
+                "semester": "First Semester",
+                "department": "Department of Computer Science",
+                "category": "Core Compulsory",
+                "prerequisite_course_code": "CSC 201",
+                "lecturer_id": lecturer_finch.id,
+                "description": "Analysis of algorithms, balanced search trees, graph theory, NP-completeness, and dynamic programming."
+            },
+            {
+                "code": "CSC 303",
+                "title": "Operating Systems & Distributed Architecture",
+                "credit_units": 3,
+                "level": "300 Level",
+                "semester": "First Semester",
+                "department": "Department of Computer Science",
+                "category": "Core Compulsory",
+                "prerequisite_course_code": "CSC 205",
+                "lecturer_id": lecturer_finch.id,
+                "description": "Kernel architecture, process synchronization, paging, distributed shared memory, and cluster scheduling."
+            },
+            {
+                "code": "SEN 305",
+                "title": "Software Architecture & Design Patterns",
+                "credit_units": 2,
+                "level": "300 Level",
+                "semester": "First Semester",
+                "department": "Department of Software Engineering",
+                "category": "Core Compulsory",
+                "prerequisite_course_code": None,
+                "lecturer_id": lecturer_davis.id,
+                "description": "Architectural styles, microservices, enterprise integration patterns, domain-driven design, and clean architecture."
+            },
+            {
+                "code": "CSC 305",
+                "title": "Database Systems & Information Architecture",
+                "credit_units": 3,
+                "level": "300 Level",
+                "semester": "First Semester",
+                "department": "Department of Computer Science",
+                "category": "Core Compulsory",
+                "prerequisite_course_code": None,
+                "lecturer_id": lecturer_davis.id,
+                "description": "Relational calculus, query optimization, ACID transactions, NoSQL graph databases, and distributed sharding."
+            },
+            {
+                "code": "CSC 307",
+                "title": "Artificial Intelligence & Neural Networks",
+                "credit_units": 3,
+                "level": "300 Level",
+                "semester": "First Semester",
+                "department": "Department of Computer Science",
+                "category": "Elective",
+                "prerequisite_course_code": "MTH 201",
+                "lecturer_id": lecturer_finch.id,
+                "description": "Heuristic search, knowledge representation, backpropagation neural networks, transformers, and automated reasoning."
+            },
+            {
+                "code": "CSC 309",
+                "title": "Compiler Construction & Formal Languages",
+                "credit_units": 3,
+                "level": "300 Level",
+                "semester": "First Semester",
+                "department": "Department of Computer Science",
+                "category": "Elective",
+                "prerequisite_course_code": "CSC 201",
+                "lecturer_id": lecturer_finch.id,
+                "description": "Lexical analysis, LL/LR parsing tables, syntax-directed translation, symbol tables, and code generation."
+            },
+            {
+                "code": "CSC 311",
+                "title": "Computer Networks & Cloud Infrastructure",
+                "credit_units": 3,
+                "level": "300 Level",
+                "semester": "First Semester",
+                "department": "Department of Computer Science",
+                "category": "Elective",
+                "prerequisite_course_code": None,
+                "lecturer_id": lecturer_davis.id,
+                "description": "TCP/IP socket architecture, software-defined networking, SDN controllers, cloud provisioning, and virtualization."
+            },
+            {
+                "code": "CSC 313",
+                "title": "Human-Computer Interaction & Cognitive Systems",
+                "credit_units": 2,
+                "level": "300 Level",
+                "semester": "First Semester",
+                "department": "Department of Computer Science",
+                "category": "Elective",
+                "prerequisite_course_code": None,
+                "lecturer_id": None,
+                "description": "Usability engineering, mental models, Fitts' law, accessibility guidelines, heuristics, and user experience metrics."
             }
         ]
 
@@ -406,6 +576,8 @@ def seed_database():
                     level=c["level"],
                     semester=c["semester"],
                     department=c["department"],
+                    category=c.get("category", "Core Compulsory"),
+                    prerequisite_course_code=c.get("prerequisite_course_code"),
                     lecturer_id=c["lecturer_id"],
                     description=c["description"]
                 )
@@ -413,45 +585,83 @@ def seed_database():
                 db.flush()
             else:
                 course.title = c["title"]
+                course.credit_units = c["credit_units"]
+                course.level = c["level"]
+                course.semester = c["semester"]
                 course.department = c["department"]
+                course.category = c.get("category", "Core Compulsory")
+                course.prerequisite_course_code = c.get("prerequisite_course_code")
                 course.description = c["description"]
+                if c["lecturer_id"]:
+                    course.lecturer_id = c["lecturer_id"]
             course_objs[c["code"]] = course
         db.commit()
 
-        # Course Enrollments
-        sophia_courses = ["CSC 301", "CSC 303", "SEN 305"]
-        for code in sophia_courses:
-            c = course_objs[code]
-            enr = db.query(CourseEnrollment).filter_by(student_id=student_sophia.id, course_id=c.id).first()
-            if not enr:
-                db.add(CourseEnrollment(student_id=student_sophia.id, course_id=c.id))
+        # Seed Transcripts and Historical Grades
+        # 1. Sophia Chen (300 Level):
+        # Passed 100L: CSC 101, MTH 101, GST 101
+        # Passed 200L: CSC 201, CSC 205
+        # FAILED CARRYOVER from 200L First Semester: MTH 201 (Grade F, 34/100, 3 Units)
+        sophia_transcripts = [
+            # 100 Level (Session 2024/2025)
+            {"code": "CSC 101", "session": "2024/2025", "semester": "First Semester", "ca": 27.0, "exam": 58.0, "total": 85.0, "grade": "A", "gp": 5.0},
+            {"code": "MTH 101", "session": "2024/2025", "semester": "First Semester", "ca": 25.0, "exam": 53.0, "total": 78.0, "grade": "A", "gp": 5.0},
+            {"code": "GST 101", "session": "2024/2025", "semester": "First Semester", "ca": 28.0, "exam": 61.0, "total": 89.0, "grade": "A", "gp": 5.0},
+            # 200 Level (Session 2025/2026)
+            {"code": "CSC 201", "session": "2025/2026", "semester": "First Semester", "ca": 28.0, "exam": 60.0, "total": 88.0, "grade": "A", "gp": 5.0},
+            {"code": "CSC 205", "session": "2025/2026", "semester": "First Semester", "ca": 26.0, "exam": 58.0, "total": 84.0, "grade": "A", "gp": 5.0},
+            # *** THE MANDATORY CARRYOVER: MTH 201 failed in 200L ***
+            {"code": "MTH 201", "session": "2025/2026", "semester": "First Semester", "ca": 12.0, "exam": 22.0, "total": 34.0, "grade": "F", "gp": 0.0},
+        ]
 
-        # Grades for Sophia
-        g1 = db.query(ExamGrade).filter_by(student_id=student_sophia.id, course_id=course_objs["CSC 301"].id).first()
-        if not g1:
-            db.add(ExamGrade(
-                student_id=student_sophia.id,
-                course_id=course_objs["CSC 301"].id,
-                ca_score=28.0,
-                exam_score=64.0,
-                total_score=92.0,
-                letter_grade="A",
-                grade_point=5.0,
-                approved_by_senate=True
-            ))
+        for tr in sophia_transcripts:
+            c = course_objs.get(tr["code"])
+            if c:
+                g = db.query(ExamGrade).filter_by(student_id=student_sophia.id, course_id=c.id, session=tr["session"]).first()
+                if not g:
+                    db.add(ExamGrade(
+                        student_id=student_sophia.id,
+                        course_id=c.id,
+                        session=tr["session"],
+                        semester=tr["semester"],
+                        ca_score=tr["ca"],
+                        exam_score=tr["exam"],
+                        total_score=tr["total"],
+                        letter_grade=tr["grade"],
+                        grade_point=tr["gp"],
+                        approved_by_senate=True
+                    ))
+                else:
+                    g.ca_score = tr["ca"]
+                    g.exam_score = tr["exam"]
+                    g.total_score = tr["total"]
+                    g.letter_grade = tr["grade"]
+                    g.grade_point = tr["gp"]
+        db.commit()
 
-        g2 = db.query(ExamGrade).filter_by(student_id=student_sophia.id, course_id=course_objs["CSC 303"].id).first()
-        if not g2:
-            db.add(ExamGrade(
-                student_id=student_sophia.id,
-                course_id=course_objs["CSC 303"].id,
-                ca_score=27.5,
-                exam_score=61.5,
-                total_score=89.0,
-                letter_grade="A",
-                grade_point=5.0,
-                approved_by_senate=True
-            ))
+        # 2. David Adeleke (300 Level - Warning):
+        # Failed 200L carryovers: CSC 201 (Grade F) and MTH 201 (Grade F)
+        david_transcripts = [
+            {"code": "CSC 201", "session": "2025/2026", "semester": "First Semester", "ca": 11.0, "exam": 20.0, "total": 31.0, "grade": "F", "gp": 0.0},
+            {"code": "MTH 201", "session": "2025/2026", "semester": "First Semester", "ca": 10.0, "exam": 18.0, "total": 28.0, "grade": "F", "gp": 0.0},
+        ]
+        for tr in david_transcripts:
+            c = course_objs.get(tr["code"])
+            if c:
+                g = db.query(ExamGrade).filter_by(student_id=student_david.id, course_id=c.id, session=tr["session"]).first()
+                if not g:
+                    db.add(ExamGrade(
+                        student_id=student_david.id,
+                        course_id=c.id,
+                        session=tr["session"],
+                        semester=tr["semester"],
+                        ca_score=tr["ca"],
+                        exam_score=tr["exam"],
+                        total_score=tr["total"],
+                        letter_grade=tr["grade"],
+                        grade_point=tr["gp"],
+                        approved_by_senate=True
+                    ))
         db.commit()
 
         # Attendance for Sophia & David

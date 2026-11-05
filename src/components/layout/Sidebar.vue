@@ -89,6 +89,12 @@
             </router-link>
           </li>
           <li>
+            <router-link to="/course-enrollment">
+              <i class="ri-survey-line"></i>
+              <span>Course Enrollment (AI)</span>
+            </router-link>
+          </li>
+          <li>
             <router-link to="/subject-list">
               <i class="ri-book-open-line"></i>
               <span>Enrolled Courses</span>
@@ -159,6 +165,12 @@
             <router-link to="/subject-list">
               <i class="ri-book-read-line"></i>
               <span>Assigned Academic Courses</span>
+            </router-link>
+          </li>
+          <li>
+            <router-link to="/course-enrollment">
+              <i class="ri-survey-line"></i>
+              <span>Student Course Enrollments</span>
             </router-link>
           </li>
           <li>
@@ -383,6 +395,12 @@
               <router-link to="/subject-list">
                 <i class="ri-circle-fill circle-icon w-auto"></i>
                 Subjects
+              </router-link>
+            </li>
+            <li>
+              <router-link to="/course-enrollment">
+                <i class="ri-circle-fill circle-icon w-auto"></i>
+                Course Enrollment (AI)
               </router-link>
             </li>
             <li>

@@ -38,6 +38,8 @@ import SectionList from './pages/class/sectionList.vue'
 import SubjectList from './pages/class/subjectList.vue'
 import ClassList from './pages/class/classList.vue'
 import ClassRoomList from './pages/class/classRoomList.vue'
+// Course Enrollment & Registration
+import CourseEnrollment from './pages/courseEnrollment/CourseEnrollment.vue'
 
 // Examinations
 import ExamList from './pages/examination/examList.vue'
@@ -201,6 +203,8 @@ const routes = [
     { path: '/guardian-details', component: GuardianDetails, meta: { requiresAuth: true, roles: [ROLE_SUPER_ADMIN, ROLE_ADMIN, ROLE_GUARDIAN, 'parent'], title: 'Guardian Profile' } },
 
     // ================= 9. CLASS & CURRICULUM =================
+    { path: '/course-enrollment', component: CourseEnrollment, meta: { requiresAuth: true, roles: ROLES_ALL_CAMPUS, title: 'AI Course Enrollment' } },
+    { path: '/course-registration', component: CourseEnrollment, meta: { requiresAuth: true, roles: ROLES_ALL_CAMPUS, title: 'Course Registration' } },
     { path: '/section-list', component: SectionList, meta: { requiresAuth: true, roles: ROLES_FACULTY_AND_ADMIN, title: 'Class Sections' } },
     { path: '/subject-list', component: SubjectList, meta: { requiresAuth: true, roles: ROLES_ACADEMIC_AND_ADMIN, title: 'Course Modules' } },
     { path: '/class-list', component: ClassList, meta: { requiresAuth: true, roles: ROLES_FACULTY_AND_ADMIN, title: 'Class Rooms' } },

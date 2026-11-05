@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.db.base_class import Base
@@ -15,6 +15,8 @@ class Course(Base):
     department = Column(String(255), default="Department of Computer Science & AI")
     faculty = Column(String(255), default="Faculty of Computing & Information Technology")
     description = Column(String(1000), nullable=True)
+    category = Column(String(50), default="Core Compulsory")            # Core Compulsory, Required, Elective, General Studies
+    prerequisite_course_code = Column(String(50), nullable=True)        # e.g. "CSC 201"
     lecturer_id = Column(Integer, ForeignKey("lecturers.id", ondelete="SET NULL"), nullable=True)
 
     # Relationships
@@ -32,6 +34,9 @@ class CourseEnrollment(Base):
     session = Column(String(50), default="2026/2027")
     semester = Column(String(50), default="First Semester")
     status = Column(String(50), default="Registered")  # Registered, Dropped, Completed
+    is_carryover = Column(Boolean, default=False)
+    auto_enrolled_by_ai = Column(Boolean, default=False)
+    registration_type = Column(String(50), default="Core Regular")  # Carryover (Auto-Enrolled), Core Regular, Elective
     enrolled_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
