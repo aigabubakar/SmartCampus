@@ -12,7 +12,11 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
     const auditData = ref(null);
     const selectedCourseIds = ref([]);
     const registrationSlip = ref(null);
-    const activeTab = ref('registration'); // 'registration' | 'slip' | 'history'
+    const activeTab = ref('registration'); // 'registration' | 'slip'
+    const allAccreditedCourses = ref([]);
+    const searchQuery = ref('');
+    const selectedCategoryFilter = ref('All'); // 'All' | 'Core' | 'Elective'
+    const isInterDeptModalOpen = ref(false);
 
     const student = computed(() => auditData.value?.student || null);
     const session = computed(() => auditData.value?.session || '2026/2027');
@@ -37,14 +41,22 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
         const map = new Map();
         for (const c of mandatoryCarryovers.value) map.set(c.id, c);
         for (const c of availableCourses.value) map.set(c.id, c);
+        for (const c of allAccreditedCourses.value) {
+            if (!map.has(c.id)) map.set(c.id, c);
+        }
         return map;
     });
 
-    // Reactive calculations
+    // Reactive list of currently selected courses in docket
     const selectedCourses = computed(() => {
         return selectedCourseIds.value
             .map(id => allCoursesMap.value.get(id))
             .filter(Boolean);
+    });
+
+    // Fresh courses in docket added by student (excluding mandatory carryovers)
+    const freshSelectedCourses = computed(() => {
+        return selectedCourses.value.filter(c => !carryoverIdSet.value.has(c.id));
     });
 
     const totalSelectedUnits = computed(() => {
@@ -79,7 +91,7 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
         );
     });
 
-    // Ensure all mandatory carryovers are always included
+    // Ensure all mandatory carryovers are always included and locked
     const enforceCarryoverSelection = () => {
         const currentSet = new Set(selectedCourseIds.value);
         for (const coId of carryoverIdSet.value) {
@@ -88,30 +100,81 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
         selectedCourseIds.value = Array.from(currentSet);
     };
 
-    // Toggle course selection
-    const toggleCourse = (course) => {
-        if (isCarryoverLocked(course.id)) {
+    // Add a fresh course to docket
+    const addCourse = (course) => {
+        if (selectedCourseIds.value.includes(course.id)) {
+            toastStore.info(`${course.code} is already in your registration docket.`);
+            return;
+        }
+
+        const nextUnits = totalSelectedUnits.value + (course.creditUnits || 0);
+        if (nextUnits > (creditPolicy.value?.maxUnits || 24)) {
             toastStore.warning(
-                `Senate Regulation Lock: ${course.code} is a mandatory carryover from a previous level and cannot be unselected.`,
-                'Mandatory Carryover Enforced'
+                `Cannot add ${course.code} (${course.creditUnits} Units). Current load is ${totalSelectedUnits.value} units; adding this course would exceed the 24-unit ceiling!`,
+                'Credit Limit Exceeded'
             );
             return;
         }
 
-        const idx = selectedCourseIds.value.indexOf(course.id);
+        selectedCourseIds.value.push(course.id);
+        toastStore.success(`Added ${course.code}: ${course.title} (${course.creditUnits} Units) to docket.`);
+    };
+
+    // Remove a fresh course from docket
+    const removeCourse = (courseId) => {
+        if (isCarryoverLocked(courseId)) {
+            toastStore.warning(
+                `Senate Regulation Lock: Mandatory carryover courses cannot be removed from your docket.`,
+                'Mandatory Carryover Locked'
+            );
+            return;
+        }
+
+        const idx = selectedCourseIds.value.indexOf(courseId);
         if (idx >= 0) {
+            const course = allCoursesMap.value.get(courseId);
             selectedCourseIds.value.splice(idx, 1);
-        } else {
-            // Check potential overload
-            const nextUnits = totalSelectedUnits.value + (course.creditUnits || 0);
-            if (nextUnits > (creditPolicy.value?.maxUnits || 24)) {
-                toastStore.warning(
-                    `Adding ${course.code} (${course.creditUnits} Units) would bring total units to ${nextUnits}, exceeding the 24-unit ceiling!`,
-                    'Credit Unit Limit Exceeded'
-                );
-                return;
+            if (course) {
+                toastStore.info(`Removed ${course.code} from docket.`);
             }
-            selectedCourseIds.value.push(course.id);
+        }
+    };
+
+    // Toggle course selection
+    const toggleCourse = (course) => {
+        if (selectedCourseIds.value.includes(course.id)) {
+            removeCourse(course.id);
+        } else {
+            addCourse(course);
+        }
+    };
+
+    // Clear only fresh courses (preserves mandatory carryovers)
+    const clearFreshCourses = () => {
+        selectedCourseIds.value = Array.from(carryoverIdSet.value);
+        toastStore.info('Cleared fresh courses. Mandatory carryovers remain locked in docket.');
+    };
+
+    // Quick add AI recommended core courses
+    const quickAddRecommendedCore = () => {
+        const recommendedIds = auditData.value?.aiAdvisory?.recommendedCourseIds || [];
+        let addedCount = 0;
+        let currentLoad = totalSelectedUnits.value;
+
+        for (const id of recommendedIds) {
+            if (!selectedCourseIds.value.includes(id)) {
+                const c = allCoursesMap.value.get(id);
+                if (c && currentLoad + c.creditUnits <= 24) {
+                    selectedCourseIds.value.push(id);
+                    currentLoad += c.creditUnits;
+                    addedCount++;
+                }
+            }
+        }
+        if (addedCount > 0) {
+            toastStore.success(`Batch-added ${addedCount} recommended core modules to docket.`);
+        } else {
+            toastStore.info('All recommended core modules are already in your docket.');
         }
     };
 
@@ -141,16 +204,19 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
             auditData.value = data;
 
             // Initialize selections:
-            // 1. If existing active enrollments exist, populate those
+            // If existing active enrollments exist in DB, load them
             if (data.currentEnrollments && data.currentEnrollments.length > 0) {
                 selectedCourseIds.value = data.currentEnrollments.map(e => e.courseId);
             } else {
-                // Otherwise populate with recommended courses
-                selectedCourseIds.value = [...(data.aiAdvisory?.recommendedCourseIds || [])];
+                // By default, start with ONLY mandatory carryovers so student can add fresh ones!
+                selectedCourseIds.value = (data.mandatoryCarryovers || []).map(c => c.id);
             }
 
             // Always enforce that mandatory carryovers are selected
             enforceCarryoverSelection();
+
+            // Fetch all accredited courses for search
+            await fetchAllAccreditedCourses();
 
             return data;
         } catch (err) {
@@ -162,15 +228,35 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
         }
     };
 
+    // API: Fetch All Accredited University Courses
+    const fetchAllAccreditedCourses = async (search = '', level = 'All Levels', department = 'All Departments') => {
+        try {
+            const queryParams = new URLSearchParams();
+            if (search) queryParams.append('search', search);
+            if (level && level !== 'All Levels') queryParams.append('level', level);
+            if (department && department !== 'All Departments') queryParams.append('department', department);
+
+            const res = await fetch(`http://127.0.0.1:8000/api/v1/enrollment/all-courses?${queryParams.toString()}`);
+            if (res.ok) {
+                const courses = await res.json();
+                allAccreditedCourses.value = courses;
+                return courses;
+            }
+        } catch (err) {
+            console.warn('[EnrollmentStore] Error fetching all courses:', err);
+        }
+        return [];
+    };
+
     // API: Submit Registration
     const submitRegistration = async () => {
         if (!canSubmit.value) {
             if (!allCarryoversSelected.value) {
-                toastStore.error('All mandatory carryover courses must be registered first!');
+                toastStore.error('Mandatory carryover courses must be registered first!');
             } else if (isUnderload.value) {
-                toastStore.warning(`Minimum allowable course load is ${creditPolicy.value?.minUnits} units.`);
+                toastStore.warning(`Minimum allowable course load is ${creditPolicy.value?.minUnits} units. Please add fresh courses.`);
             } else if (isOverload.value) {
-                toastStore.error(`Maximum allowable course load is ${creditPolicy.value?.maxUnits} units.`);
+                toastStore.error(`Maximum allowable course load is ${creditPolicy.value?.maxUnits} units. Please remove excess courses.`);
             }
             return;
         }
@@ -199,7 +285,7 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
             const result = await res.json();
             toastStore.success(result.message || 'Course registration completed successfully!');
             
-            // Refresh audit & switch to slip view
+            // Switch to official slip view
             await fetchSlip();
             activeTab.value = 'slip';
             await fetchAudit();
@@ -210,6 +296,28 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
             throw err;
         } finally {
             isSubmitting.value = false;
+        }
+    };
+
+    // API: Reset Docket
+    const resetDocket = async () => {
+        try {
+            const token = authStore.token;
+            const res = await fetch('http://127.0.0.1:8000/api/v1/enrollment/reset', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (res.ok) {
+                const result = await res.json();
+                toastStore.info(result.message || 'Docket reset to mandatory carryover only.');
+                await fetchAudit();
+                activeTab.value = 'registration';
+            }
+        } catch (err) {
+            console.error('[EnrollmentStore] Reset error:', err);
         }
     };
 
@@ -237,34 +345,6 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
         }
     };
 
-    // API: Drop Course
-    const dropCourse = async (courseId) => {
-        try {
-            const token = authStore.token;
-            const res = await fetch(`http://127.0.0.1:8000/api/v1/enrollment/drop/${courseId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.detail || 'Cannot drop course.');
-            }
-
-            const data = await res.json();
-            toastStore.success(data.message || 'Course dropped successfully.');
-            await fetchAudit();
-            await fetchSlip();
-            return data;
-        } catch (err) {
-            console.error('[EnrollmentStore] Drop course error:', err);
-            toastStore.error(err.message || 'Failed to drop course.');
-            throw err;
-        }
-    };
-
     return {
         isLoading,
         isSubmitting,
@@ -272,6 +352,10 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
         selectedCourseIds,
         registrationSlip,
         activeTab,
+        allAccreditedCourses,
+        searchQuery,
+        selectedCategoryFilter,
+        isInterDeptModalOpen,
         student,
         session,
         semester,
@@ -282,6 +366,7 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
         creditPolicy,
         aiAdvisory,
         selectedCourses,
+        freshSelectedCourses,
         totalSelectedUnits,
         carryoverUnits,
         regularUnits,
@@ -290,11 +375,16 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
         allCarryoversSelected,
         canSubmit,
         isCarryoverLocked,
+        addCourse,
+        removeCourse,
         toggleCourse,
+        clearFreshCourses,
+        quickAddRecommendedCore,
         enforceCarryoverSelection,
         fetchAudit,
+        fetchAllAccreditedCourses,
         submitRegistration,
-        fetchSlip,
-        dropCourse
+        resetDocket,
+        fetchSlip
     };
 });

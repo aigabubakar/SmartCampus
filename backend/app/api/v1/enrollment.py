@@ -641,3 +641,84 @@ def drop_course(
         "status": "success",
         "message": f"Successfully dropped {course_title} from your {session} enrollment docket."
     }
+
+@router.post("/reset")
+def reset_enrollment_docket(
+    session: str = "2026/2027",
+    semester: str = "First Semester",
+    student_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Resets the student's active semester registration:
+    Clears fresh course enrollments while strictly preserving and locking mandatory carryovers!
+    """
+    student = get_target_student(db, current_user, student_id)
+    
+    # Clear current session enrollments
+    db.query(CourseEnrollment).filter_by(
+        student_id=student.id,
+        session=session,
+        semester=semester
+    ).delete()
+
+    # Automatically re-lock mandatory carryovers
+    carryovers_raw = compute_unfulfilled_carryovers(db, student, semester)
+    created_carryovers = []
+    for item in carryovers_raw:
+        c = item["course"]
+        enr = CourseEnrollment(
+            student_id=student.id,
+            course_id=c.id,
+            session=session,
+            semester=semester,
+            status="Registered",
+            is_carryover=True,
+            auto_enrolled_by_ai=True,
+            registration_type="Carryover (Auto-Enrolled)"
+        )
+        db.add(enr)
+        created_carryovers.append(c.code)
+    db.commit()
+
+    return {
+        "status": "success",
+        "message": f"Docket reset. {len(created_carryovers)} mandatory carryover(s) [{', '.join(created_carryovers)}] preserved. You can now add fresh courses.",
+        "carryoversPreserved": created_carryovers
+    }
+
+@router.get("/all-courses")
+def get_all_accredited_courses(
+    level: Optional[str] = None,
+    department: Optional[str] = None,
+    search: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """List all accredited university courses with category, units, level, and prerequisites."""
+    query = db.query(Course)
+    if level and level != "All Levels":
+        query = query.filter(Course.level.ilike(f"%{level}%"))
+    if department and department != "All Departments":
+        query = query.filter(Course.department.ilike(f"%{department}%"))
+    if search:
+        s = f"%{search.strip()}%"
+        query = query.filter(or_(Course.code.ilike(s), Course.title.ilike(s), Course.description.ilike(s)))
+    
+    courses = query.all()
+    results = []
+    for c in courses:
+        results.append({
+            "id": c.id,
+            "code": c.code,
+            "title": c.title,
+            "creditUnits": c.credit_units,
+            "level": c.level,
+            "semester": c.semester,
+            "department": c.department,
+            "category": c.category or "Core Compulsory",
+            "prerequisiteCode": c.prerequisite_course_code,
+            "lecturerName": c.lecturer.user.name if c.lecturer and c.lecturer.user else "Faculty Board",
+            "description": c.description
+        })
+    return results
