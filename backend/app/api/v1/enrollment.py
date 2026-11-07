@@ -144,9 +144,14 @@ def get_target_student(db: Session, current_user: User, student_id: Optional[int
         if not student:
             raise HTTPException(status_code=404, detail="Student profile not found for authenticated user")
         return student
-    elif current_user.role in ["super-admin", "admin"]:
-        # Default to first student if admin without explicit studentId
-        student = db.query(StudentProfile).first()
+    elif current_user.role in ["super-admin", "admin", "lecturer"]:
+        # Academic staff / level adviser inspecting course audit without explicit studentId:
+        # Default to the first student in their department/assigned level, or the first active student
+        student = None
+        if current_user.department:
+            student = db.query(StudentProfile).filter(StudentProfile.department.ilike(f"%{current_user.department}%")).first()
+        if not student:
+            student = db.query(StudentProfile).first()
         if not student:
             raise HTTPException(status_code=404, detail="No students available in system")
         return student

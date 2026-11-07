@@ -26,7 +26,16 @@
                 Tertiary Course Enrollment & Registration Portal
               </h4>
 
-              <div class="d-flex flex-wrap align-items-center gap-12 text-xs text-secondary-light">
+              <div v-if="enrollmentStore.isAdviserOrAdmin" class="d-flex flex-wrap align-items-center gap-12 text-xs text-secondary-light">
+                <span><strong>Academic Officer:</strong> {{ authStore.user?.name || 'Faculty Staff' }}</span>
+                <span>•</span>
+                <span><strong>Staff ID:</strong> <span class="font-monospace text-neutral-900 fw-bold">{{ authStore.user?.staff_id || authStore.user?.staffId || 'FAC-104' }}</span></span>
+                <span>•</span>
+                <span><strong>Department:</strong> {{ authStore.user?.department || 'Computer Science' }}</span>
+                <span>•</span>
+                <span><strong>Role:</strong> <span class="badge bg-primary-100 text-primary-800 text-xxs px-6 py-2 radius-4 fw-bold">Level Adviser & Endorsement Authority</span></span>
+              </div>
+              <div v-else class="d-flex flex-wrap align-items-center gap-12 text-xs text-secondary-light">
                 <span><strong>Enrolled Scholar:</strong> {{ enrollmentStore.student?.name }}</span>
                 <span>•</span>
                 <span><strong>Matric No:</strong> <span class="font-monospace text-neutral-900 fw-bold">{{ enrollmentStore.student?.matricNumber }}</span></span>
@@ -221,6 +230,7 @@ import CourseRegistrationSlip from '@/components/courseEnrollment/CourseRegistra
 import InterDepartmentalModal from '@/components/courseEnrollment/InterDepartmentalModal.vue';
 import AdviserApprovalConsole from '@/components/courseEnrollment/AdviserApprovalConsole.vue';
 import { useEnrollmentStore } from '@/stores/enrollment.js';
+import { useAuthStore } from '@/stores/auth.js';
 
 export default {
   name: "CourseEnrollment",
@@ -238,16 +248,17 @@ export default {
   },
   setup() {
     const enrollmentStore = useEnrollmentStore();
+    const authStore = useAuthStore();
 
     onMounted(async () => {
       try {
-        await enrollmentStore.fetchAudit();
         if (enrollmentStore.isAdviserOrAdmin) {
           enrollmentStore.activeTab = 'adviser';
           await enrollmentStore.fetchAdviserSubmissions();
         }
+        await enrollmentStore.fetchAudit();
       } catch (err) {
-        console.error('Failed to load course enrollment audit:', err);
+        console.error('Failed to load course enrollment data:', err);
       }
     });
 
@@ -258,6 +269,7 @@ export default {
 
     return {
       enrollmentStore,
+      authStore,
       handleViewSlip
     };
   }
