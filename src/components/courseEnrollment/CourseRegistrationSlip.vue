@@ -69,13 +69,45 @@
             </div>
           </div>
 
-          <!-- Academic Standing Badge -->
+          <!-- Academic Standing & Adviser Approval Badges -->
           <div class="text-md-end flex-shrink-0">
             <span class="d-block text-xxs text-secondary-light text-uppercase fw-semibold">Cumulative GPA</span>
-            <span class="text-base fw-bold text-success-700 font-monospace">{{ slip?.student?.cgpa?.toFixed(2) }} CGPA</span>
-            <span class="badge bg-success-50 text-success-700 border border-success-200 text-xxs px-8 py-2 radius-4 d-block mt-4">
-              Senate Enrolled & Cleared
+            <span class="text-base fw-bold text-success-700 font-monospace mb-4 d-block">{{ slip?.student?.cgpa?.toFixed(2) }} CGPA</span>
+            
+            <span 
+              v-if="slip?.adviserApproval?.isApproved"
+              class="badge bg-success-600 text-white text-xxs px-8 py-3 radius-4 d-inline-flex align-items-center gap-4 fw-bold"
+            >
+              <i class="ri-checkbox-circle-fill"></i> Adviser Approved & Signed
             </span>
+            <span 
+              v-else-if="slip?.adviserApproval?.isDisapproved"
+              class="badge bg-danger-600 text-white text-xxs px-8 py-3 radius-4 d-inline-flex align-items-center gap-4 fw-bold"
+            >
+              <i class="ri-close-circle-fill"></i> Disapproved • Revision Required
+            </span>
+            <span 
+              v-else
+              class="badge bg-warning-500 text-white text-xxs px-8 py-3 radius-4 d-inline-flex align-items-center gap-4 fw-bold"
+            >
+              <i class="ri-time-fill"></i> Awaiting Adviser Approval
+            </span>
+          </div>
+        </div>
+
+        <!-- Level Adviser Endorsement Remarks (if provided) -->
+        <div v-if="slip?.adviserApproval?.adviserRemarks" class="mt-16 p-12 radius-10 bg-neutral-50 border border-neutral-300">
+          <div class="d-flex align-items-start gap-8">
+            <i class="ri-chat-check-fill text-primary-600 text-base flex-shrink-0 mt-2"></i>
+            <div>
+              <span class="text-xxs fw-bold text-neutral-800 text-uppercase d-block mb-2">
+                Level Adviser Official Remarks:
+              </span>
+              <p class="text-xs text-neutral-900 mb-0 fst-italic">
+                "{{ slip?.adviserApproval?.adviserRemarks }}" — <strong>{{ slip?.adviserApproval?.adviserName || 'Prof. Alistair Finch' }}</strong>
+                <span v-if="slip?.adviserApproval?.approvedAt" class="text-secondary-light"> ({{ slip?.adviserApproval?.approvedAt }})</span>
+              </p>
+            </div>
           </div>
         </div>
 
@@ -212,16 +244,46 @@
                   <span class="text-xxs text-secondary-light text-uppercase fw-semibold d-block">Student Signature</span>
                 </div>
 
+                <!-- Level Adviser Signature Column -->
                 <div class="col-4">
-                  <div class="border-bottom border-neutral-400 pb-8 mb-4 min-h-40-px d-flex align-items-end justify-content-center">
-                    <span class="font-cursive text-xs text-primary-600">Prof. A. Finch</span>
+                  <div class="border-bottom border-neutral-400 pb-8 mb-4 min-h-48-px d-flex flex-column align-items-center justify-content-end">
+                    <template v-if="slip?.adviserApproval?.isApproved">
+                      <span class="font-cursive text-sm text-primary-600 fw-bold">{{ slip?.adviserApproval?.adviserName || 'Prof. Alistair Finch' }}</span>
+                      <span class="badge bg-success-100 text-success-700 border border-success-300 text-xxs px-4 py-1 radius-4 mt-2">
+                        <i class="ri-checkbox-circle-fill"></i> Endorsed & Signed
+                      </span>
+                    </template>
+                    <template v-else-if="slip?.adviserApproval?.isDisapproved">
+                      <span class="badge bg-danger-100 text-danger-700 border border-danger-300 text-xxs px-4 py-2 radius-4">
+                        <i class="ri-close-circle-fill"></i> Revision Required
+                      </span>
+                    </template>
+                    <template v-else>
+                      <span class="badge bg-warning-50 text-warning-700 border border-warning-200 text-xxs px-4 py-1 radius-4">
+                        <i class="ri-time-line"></i> Awaiting Review
+                      </span>
+                    </template>
                   </div>
-                  <span class="text-xxs text-secondary-light text-uppercase fw-semibold d-block">Course Adviser</span>
+                  <span class="text-xxs text-secondary-light text-uppercase fw-semibold d-block">
+                    {{ slip?.adviserApproval?.adviserTitle || 'Course Adviser' }}
+                  </span>
+                  <span v-if="slip?.adviserApproval?.approvedAt && slip?.adviserApproval?.isApproved" class="text-xxs text-neutral-400 font-monospace d-block">
+                    {{ slip?.adviserApproval?.approvedAt.split(' - ')[0] }}
+                  </span>
                 </div>
 
+                <!-- Dean of Faculty Column -->
                 <div class="col-4">
-                  <div class="border-bottom border-neutral-400 pb-8 mb-4 min-h-40-px d-flex align-items-end justify-content-center">
-                    <span class="font-cursive text-xs text-primary-600">Senate Dean</span>
+                  <div class="border-bottom border-neutral-400 pb-8 mb-4 min-h-48-px d-flex flex-column align-items-center justify-content-end">
+                    <template v-if="slip?.adviserApproval?.isApproved">
+                      <span class="font-cursive text-sm text-primary-600 fw-bold">Prof. E. Vance</span>
+                      <span class="badge bg-primary-50 text-primary-700 border border-primary-200 text-xxs px-4 py-1 radius-4 mt-2">
+                        <i class="ri-award-fill"></i> Faculty Dean Seal
+                      </span>
+                    </template>
+                    <template v-else>
+                      <span class="text-xxs text-neutral-400 fst-italic">Pending Adviser Sign-off</span>
+                    </template>
                   </div>
                   <span class="text-xxs text-secondary-light text-uppercase fw-semibold d-block">Dean of Faculty</span>
                 </div>

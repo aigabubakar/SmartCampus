@@ -239,25 +239,46 @@
 
       <!-- Action Buttons -->
       <div class="mt-20 d-flex flex-column gap-8">
+        <!-- If approved, show locked notice -->
+        <div v-if="enrollmentStore.isApprovedByAdviser" class="p-12 radius-10 bg-success-50 border border-success-200 text-center mb-4">
+          <i class="ri-shield-check-fill text-success-600 text-lg d-block mb-2"></i>
+          <span class="d-block text-xs fw-bold text-success-900">Registration Approved & Signed</span>
+          <span class="d-block text-xxs text-success-800">Endorsed by Level Adviser {{ enrollmentStore.adviserReview?.adviserName || 'Prof. Alistair Finch' }}.</span>
+        </div>
+
         <button 
+          v-if="!enrollmentStore.isApprovedByAdviser"
           type="button" 
           class="btn w-100 py-12 radius-10 fw-bold d-flex align-items-center justify-content-center gap-8 shadow-sm"
-          :class="enrollmentStore.isUnderload ? 'btn-warning text-neutral-900' : 'btn-primary'"
+          :class="enrollmentStore.isUnderload ? 'btn-warning text-neutral-900' : (enrollmentStore.isDisapprovedByAdviser ? 'btn-danger' : 'btn-primary')"
           :disabled="!enrollmentStore.canSubmit || enrollmentStore.isSubmitting"
           @click="handleSubmit"
         >
           <span v-if="enrollmentStore.isSubmitting" class="spinner-border spinner-border-sm" role="status"></span>
           <i v-else-if="enrollmentStore.isUnderload" class="ri-shield-user-fill text-lg"></i>
+          <i v-else-if="enrollmentStore.isDisapprovedByAdviser" class="ri-refresh-line text-lg"></i>
           <i v-else class="ri-shield-check-fill text-lg"></i>
           <span>
             {{ enrollmentStore.isSubmitting 
                 ? 'Submitting...' 
-                : (enrollmentStore.isUnderload ? 'Submit with Underload Concession' : 'Finalize & Submit Course Form') 
+                : (enrollmentStore.isDisapprovedByAdviser 
+                    ? 'Re-Submit Corrected Registration' 
+                    : (enrollmentStore.isUnderload ? 'Submit with Underload Concession' : 'Finalize & Submit Course Form')) 
             }}
           </span>
         </button>
 
-        <div class="d-flex align-items-center justify-content-between gap-8">
+        <button 
+          v-else
+          type="button" 
+          class="btn btn-outline-success w-100 py-10 radius-10 fw-bold d-flex align-items-center justify-content-center gap-8"
+          @click="enrollmentStore.activeTab = 'slip'"
+        >
+          <i class="ri-printer-line text-base"></i>
+          <span>View Officially Signed Course Slip</span>
+        </button>
+
+        <div v-if="!enrollmentStore.isApprovedByAdviser" class="d-flex align-items-center justify-content-between gap-8">
           <button 
             v-if="enrollmentStore.freshSelectedCourses.length > 0"
             type="button" 

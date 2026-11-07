@@ -22,6 +22,16 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
     const underloadReason = ref('');
     const underloadNotes = ref('');
 
+    // Level Adviser Console State
+    const adviserSubmissions = ref([]);
+    const adviserSummary = ref({ totalSubmissions: 0, pendingCount: 0, approvedCount: 0, disapprovedCount: 0 });
+    const isAdviserLoading = ref(false);
+    const selectedSubmissionForReview = ref(null);
+    const isReviewModalOpen = ref(false);
+    const adviserLevelFilter = ref('All Levels');
+    const adviserStatusFilter = ref('All');
+    const adviserSearchQuery = ref('');
+
     const student = computed(() => auditData.value?.student || null);
     const session = computed(() => auditData.value?.session || '2026/2027');
     const semester = computed(() => auditData.value?.semester || 'First Semester');
@@ -31,6 +41,18 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
     const currentEnrollments = computed(() => auditData.value?.currentEnrollments || []);
     const creditPolicy = computed(() => auditData.value?.creditPolicy || { minUnits: 15, maxUnits: 24, carryoverUnits: 0, advisableMaxUnits: 21 });
     const aiAdvisory = computed(() => auditData.value?.aiAdvisory || null);
+
+    // Registration Status & Level Adviser Review
+    const registrationStatus = computed(() => auditData.value?.registrationStatus || 'DRAFT');
+    const adviserReview = computed(() => auditData.value?.adviserReview || null);
+    const isApprovedByAdviser = computed(() => registrationStatus.value === 'APPROVED');
+    const isDisapprovedByAdviser = computed(() => registrationStatus.value === 'DISAPPROVED');
+    const isPendingAdviserApproval = computed(() => registrationStatus.value === 'PENDING_APPROVAL');
+
+    const isAdviserOrAdmin = computed(() => {
+        const role = authStore.user?.role;
+        return ['lecturer', 'admin', 'super-admin'].includes(role);
+    });
 
     const underloadReasonsList = computed(() => {
         return creditPolicy.value?.underloadReasons || [
@@ -99,6 +121,8 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
         if (selectedCourseIds.value.length === 0 || isSubmitting.value) return false;
         if (!allCarryoversSelected.value) return false;
         if (isOverload.value) return false;
+        // If already approved by Level Adviser, docket is officially locked
+        if (isApprovedByAdviser.value) return false;
         // Underload situation requires justification reason
         if (isUnderload.value) {
             return !!underloadReason.value && underloadReason.value.trim().length > 0;
@@ -372,6 +396,135 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
         }
     };
 
+    // ==========================================
+    // LEVEL ADVISER CONSOLE ACTIONS
+    // ==========================================
+
+    const fetchAdviserSubmissions = async () => {
+        isAdviserLoading.value = true;
+        try {
+            const token = authStore.token;
+            const params = new URLSearchParams({
+                session: session.value,
+                semester: semester.value
+            });
+            if (adviserLevelFilter.value && adviserLevelFilter.value !== 'All Levels') {
+                params.append('level', adviserLevelFilter.value);
+            }
+            if (adviserStatusFilter.value && adviserStatusFilter.value !== 'All') {
+                params.append('status', adviserStatusFilter.value);
+            }
+            if (adviserSearchQuery.value && adviserSearchQuery.value.trim()) {
+                params.append('search', adviserSearchQuery.value.trim());
+            }
+
+            const res = await fetch(`http://127.0.0.1:8000/api/v1/enrollment/adviser/submissions?${params.toString()}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'Failed to fetch adviser submissions.');
+            }
+            const data = await res.json();
+            adviserSubmissions.value = data.submissions || [];
+            adviserSummary.value = data.summary || { totalSubmissions: 0, pendingCount: 0, approvedCount: 0, disapprovedCount: 0 };
+            return data;
+        } catch (err) {
+            console.error('[EnrollmentStore] Error fetching adviser submissions:', err);
+            toastStore.error(err.message || 'Could not load student submissions.');
+        } finally {
+            isAdviserLoading.value = false;
+        }
+    };
+
+    const openReviewModal = async (studentId) => {
+        try {
+            const token = authStore.token;
+            const res = await fetch(`http://127.0.0.1:8000/api/v1/enrollment/adviser/submission/${studentId}?session=${session.value}&semester=${semester.value}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                selectedSubmissionForReview.value = data;
+                isReviewModalOpen.value = true;
+                return data;
+            } else {
+                toastStore.error('Could not load submission details for review.');
+            }
+        } catch (err) {
+            console.error('[EnrollmentStore] Review modal error:', err);
+            toastStore.error('Failed to load docket for review.');
+        }
+    };
+
+    const approveRegistration = async (studentId, remarks = '') => {
+        try {
+            const token = authStore.token;
+            const res = await fetch('http://127.0.0.1:8000/api/v1/enrollment/adviser/approve', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    studentId,
+                    session: session.value,
+                    semester: semester.value,
+                    remarks: remarks || undefined
+                })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'Approval failed.');
+            }
+            const result = await res.json();
+            toastStore.success(result.message || 'Course registration approved and digitally signed!');
+            await fetchAdviserSubmissions();
+            isReviewModalOpen.value = false;
+            return result;
+        } catch (err) {
+            console.error('[EnrollmentStore] Approve error:', err);
+            toastStore.error(err.message || 'Failed to approve registration.');
+            throw err;
+        }
+    };
+
+    const rejectRegistration = async (studentId, remarks) => {
+        if (!remarks || !remarks.trim()) {
+            toastStore.warning('Please provide corrective remarks/feedback explaining what the student needs to adjust.');
+            return;
+        }
+        try {
+            const token = authStore.token;
+            const res = await fetch('http://127.0.0.1:8000/api/v1/enrollment/adviser/reject', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    studentId,
+                    session: session.value,
+                    semester: semester.value,
+                    remarks: remarks.trim()
+                })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'Disapproval failed.');
+            }
+            const result = await res.json();
+            toastStore.info(result.message || 'Registration marked as Disapproved.');
+            await fetchAdviserSubmissions();
+            isReviewModalOpen.value = false;
+            return result;
+        } catch (err) {
+            console.error('[EnrollmentStore] Reject error:', err);
+            toastStore.error(err.message || 'Failed to disapprove registration.');
+            throw err;
+        }
+    };
+
     return {
         isLoading,
         isSubmitting,
@@ -404,6 +557,20 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
         underloadReason,
         underloadNotes,
         underloadReasonsList,
+        registrationStatus,
+        adviserReview,
+        isApprovedByAdviser,
+        isDisapprovedByAdviser,
+        isPendingAdviserApproval,
+        isAdviserOrAdmin,
+        adviserSubmissions,
+        adviserSummary,
+        isAdviserLoading,
+        selectedSubmissionForReview,
+        isReviewModalOpen,
+        adviserLevelFilter,
+        adviserStatusFilter,
+        adviserSearchQuery,
         isCarryoverLocked,
         addCourse,
         removeCourse,
@@ -415,6 +582,10 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
         fetchAllAccreditedCourses,
         submitRegistration,
         resetDocket,
-        fetchSlip
+        fetchSlip,
+        fetchAdviserSubmissions,
+        openReviewModal,
+        approveRegistration,
+        rejectRegistration
     };
 });

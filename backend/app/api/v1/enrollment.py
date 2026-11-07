@@ -97,6 +97,15 @@ class StudentSummaryOut(BaseModel):
     cgpa: float
     avatar: Optional[str] = None
 
+class AdviserReviewOut(BaseModel):
+    status: str  # DRAFT, PENDING_APPROVAL, APPROVED, DISAPPROVED
+    isApproved: bool = False
+    isDisapproved: bool = False
+    isPending: bool = False
+    adviserName: Optional[str] = None
+    adviserRemarks: Optional[str] = None
+    approvedAt: Optional[str] = None
+
 class EnrollmentAuditResponse(BaseModel):
     student: StudentSummaryOut
     session: str
@@ -107,6 +116,8 @@ class EnrollmentAuditResponse(BaseModel):
     currentEnrollments: List[Dict[str, Any]]
     creditPolicy: CreditPolicyOut
     aiAdvisory: AiAdvisoryOut
+    registrationStatus: str = "DRAFT"  # DRAFT, PENDING_APPROVAL, APPROVED, DISAPPROVED
+    adviserReview: Optional[AdviserReviewOut] = None
 
 class CourseRegistrationRequest(BaseModel):
     session: str = "2026/2027"
@@ -115,6 +126,12 @@ class CourseRegistrationRequest(BaseModel):
     studentId: Optional[int] = None
     underloadReason: Optional[str] = None
     underloadNotes: Optional[str] = None
+
+class AdviserReviewActionRequest(BaseModel):
+    studentId: int
+    session: str = "2026/2027"
+    semester: str = "First Semester"
+    remarks: Optional[str] = None
 
 def get_target_student(db: Session, current_user: User, student_id: Optional[int] = None) -> StudentProfile:
     if current_user.role in ["super-admin", "admin", "lecturer"] and student_id:
@@ -277,21 +294,48 @@ def audit_student_enrollment(
     ).all()
 
     current_enrollments_out = []
-    for enr in existing_enrs:
-        if enr.course:
-            current_enrollments_out.append({
-                "enrollmentId": enr.id,
-                "courseId": enr.course_id,
-                "code": enr.course.code,
-                "title": enr.course.title,
-                "creditUnits": enr.course.credit_units,
-                "level": enr.course.level,
-                "isCarryover": enr.is_carryover,
-                "autoEnrolled": enr.auto_enrolled_by_ai,
-                "registrationType": enr.registration_type,
-                "status": enr.status,
-                "enrolledAt": enr.enrolled_at.isoformat() if enr.enrolled_at else None
-            })
+    reg_status = "DRAFT"
+    adviser_review_out = None
+
+    if existing_enrs:
+        first_e = existing_enrs[0]
+        st = getattr(first_e, "approval_status", "Pending Approval") or "Pending Approval"
+        if "approved" in st.lower() and "dis" not in st.lower():
+            reg_status = "APPROVED"
+        elif "disapproved" in st.lower() or "reject" in st.lower():
+            reg_status = "DISAPPROVED"
+        else:
+            reg_status = "PENDING_APPROVAL"
+
+        adviser_review_out = AdviserReviewOut(
+            status=reg_status,
+            isApproved=(reg_status == "APPROVED"),
+            isDisapproved=(reg_status == "DISAPPROVED"),
+            isPending=(reg_status == "PENDING_APPROVAL"),
+            adviserName=getattr(first_e, "adviser_name", None) or "Prof. Alistair Finch",
+            adviserRemarks=getattr(first_e, "adviser_remarks", None),
+            approvedAt=first_e.approved_at.isoformat() if getattr(first_e, "approved_at", None) else None
+        )
+
+        for enr in existing_enrs:
+            if enr.course:
+                current_enrollments_out.append({
+                    "enrollmentId": enr.id,
+                    "courseId": enr.course_id,
+                    "code": enr.course.code,
+                    "title": enr.course.title,
+                    "creditUnits": enr.course.credit_units,
+                    "level": enr.course.level,
+                    "isCarryover": enr.is_carryover,
+                    "autoEnrolled": enr.auto_enrolled_by_ai,
+                    "registrationType": enr.registration_type,
+                    "approvalStatus": getattr(enr, "approval_status", "Pending Approval") or "Pending Approval",
+                    "adviserName": getattr(enr, "adviser_name", None),
+                    "adviserRemarks": getattr(enr, "adviser_remarks", None),
+                    "approvedAt": enr.approved_at.isoformat() if getattr(enr, "approved_at", None) else None,
+                    "status": enr.status,
+                    "enrolledAt": enr.enrolled_at.isoformat() if enr.enrolled_at else None
+                })
 
     # 4. AI Advisory Synthesis
     cgpa = student.cgpa or 3.0
@@ -363,7 +407,9 @@ def audit_student_enrollment(
         availableCourses=available_courses_out,
         currentEnrollments=current_enrollments_out,
         creditPolicy=credit_policy,
-        aiAdvisory=ai_advisory
+        aiAdvisory=ai_advisory,
+        registrationStatus=reg_status,
+        adviserReview=adviser_review_out
     )
 
 @router.post("/register")
@@ -453,7 +499,11 @@ def register_courses(
             registration_type=reg_type,
             underload_concession=is_underload,
             underload_reason=payload.underloadReason if is_underload else None,
-            concession_reference=underload_concession_ref if is_underload else None
+            concession_reference=underload_concession_ref if is_underload else None,
+            approval_status="Pending Approval",
+            adviser_remarks=None,
+            adviser_name=None,
+            approved_at=None
         )
         db.add(enr)
         created_enrollments.append(enr)
@@ -477,7 +527,7 @@ def register_courses(
 
     return {
         "status": "success",
-        "message": f"Successfully enrolled {len(created_enrollments)} courses ({total_credit_units} Credit Units) for {payload.session} - {payload.semester}." + (f" Approved under Senate Underload Concession [{underload_concession_ref}]." if is_underload else ""),
+        "message": f"Successfully enrolled {len(created_enrollments)} courses ({total_credit_units} Credit Units) for {payload.session} - {payload.semester}." + (f" Approved under Senate Underload Concession [{underload_concession_ref}]." if is_underload else "") + " Course form submitted for Level Adviser review.",
         "student": {
             "name": student.user.name if student.user else "Student",
             "matricNumber": student.matric_number,
@@ -486,6 +536,7 @@ def register_courses(
         "totalCreditUnits": total_credit_units,
         "carryoverUnits": sum(c.credit_units for c in selected_courses if c.id in mandatory_carryover_ids),
         "coursesCount": len(created_enrollments),
+        "approvalStatus": "Pending Approval",
         "isUnderload": is_underload,
         "underloadConcession": concession_data,
         "verificationHash": verification_hash,
@@ -620,6 +671,28 @@ def get_registration_slip(
             "regulatoryNotice": "Holder of this slip is authorized to undertake a reduced course load per Academic Regulation 4.6. Valid for examination clearance and degree certification."
         }
 
+    # Level Adviser Approval Details
+    first_enr = enrollments[0] if enrollments else None
+    adviser_st = getattr(first_enr, "approval_status", "Pending Approval") if first_enr else "Pending Approval"
+    adviser_name = getattr(first_enr, "adviser_name", None) or "Prof. Alistair Finch"
+    adviser_remarks = getattr(first_enr, "adviser_remarks", None)
+    approved_at_dt = getattr(first_enr, "approved_at", None)
+
+    is_approved = bool(adviser_st and "approved" in adviser_st.lower() and "dis" not in adviser_st.lower())
+    is_disapproved = bool(adviser_st and ("disapproved" in adviser_st.lower() or "reject" in adviser_st.lower()))
+    is_pending = not is_approved and not is_disapproved
+
+    adviser_approval_data = {
+        "status": "Approved" if is_approved else ("Disapproved" if is_disapproved else "Pending Approval"),
+        "isApproved": is_approved,
+        "isDisapproved": is_disapproved,
+        "isPending": is_pending,
+        "adviserName": adviser_name,
+        "adviserTitle": f"{student.level} Academic Course Adviser",
+        "adviserRemarks": adviser_remarks,
+        "approvedAt": approved_at_dt.strftime("%B %d, %Y - %H:%M UTC") if approved_at_dt else None
+    }
+
     return {
         "institution": {
             "name": inst.institution_name if inst else "Apex Metropolitan University",
@@ -647,9 +720,11 @@ def get_registration_slip(
             "electiveUnits": elective_units,
             "maxAllowedUnits": 24,
             "minAllowedUnits": 15,
-            "isUnderload": has_underload
+            "isUnderload": has_underload,
+            "approvalStatus": adviser_approval_data["status"]
         },
         "underloadConcession": concession_data,
+        "adviserApproval": adviser_approval_data,
         "courses": courses,
         "verificationToken": token,
         "generatedAt": datetime.utcnow().strftime("%B %d, %Y - %H:%M UTC")
@@ -780,3 +855,316 @@ def get_all_accredited_courses(
             "description": c.description
         })
     return results
+
+# =====================================================================
+# LEVEL ADVISER COURSE REGISTRATION APPROVAL & REVIEW ENDPOINTS
+# =====================================================================
+
+@router.get("/adviser/submissions")
+def get_adviser_submissions(
+    session: str = "2026/2027",
+    semester: str = "First Semester",
+    level: Optional[str] = "All Levels",
+    status: Optional[str] = "All",
+    search: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Returns all student course registration submissions for Level Adviser review.
+    Guarded for lecturers, faculty advisers, and academic administrators.
+    """
+    if current_user.role not in ["lecturer", "admin", "super-admin"]:
+        raise HTTPException(status_code=403, detail="Unauthorized: Level Adviser role required.")
+
+    query = db.query(StudentProfile).join(CourseEnrollment, CourseEnrollment.student_id == StudentProfile.id)\
+        .filter(CourseEnrollment.session == session, CourseEnrollment.semester == semester)\
+        .distinct()
+
+    if level and level != "All Levels":
+        query = query.filter(StudentProfile.level.ilike(f"%{level}%"))
+
+    if search and search.strip():
+        search_term = f"%{search.strip()}%"
+        query = query.join(User, StudentProfile.user_id == User.id)\
+            .filter(or_(
+                StudentProfile.matric_number.ilike(search_term),
+                User.name.ilike(search_term)
+            ))
+
+    students = query.all()
+    submissions = []
+
+    pending_count = 0
+    approved_count = 0
+    disapproved_count = 0
+
+    for s in students:
+        s_enrs = db.query(CourseEnrollment).filter_by(
+            student_id=s.id,
+            session=session,
+            semester=semester
+        ).all()
+        if not s_enrs:
+            continue
+
+        total_units = sum(e.course.credit_units for e in s_enrs if e.course)
+        carryover_units = sum(e.course.credit_units for e in s_enrs if e.course and e.is_carryover)
+        has_carryovers = any(e.is_carryover for e in s_enrs)
+        is_underload = any(getattr(e, "underload_concession", False) for e in s_enrs) or (total_units < 15)
+
+        first_e = s_enrs[0]
+        st = getattr(first_e, "approval_status", "Pending Approval") or "Pending Approval"
+        if "approved" in st.lower() and "dis" not in st.lower():
+            norm_status = "Approved"
+            approved_count += 1
+        elif "disapproved" in st.lower() or "reject" in st.lower():
+            norm_status = "Disapproved"
+            disapproved_count += 1
+        else:
+            norm_status = "Pending Approval"
+            pending_count += 1
+
+        # Status filter
+        if status and status != "All":
+            if status.lower() == "pending" and norm_status != "Pending Approval":
+                continue
+            elif status.lower() == "approved" and norm_status != "Approved":
+                continue
+            elif status.lower() in ["disapproved", "rejected"] and norm_status != "Disapproved":
+                continue
+
+        submissions.append({
+            "studentId": s.id,
+            "name": s.user.name if s.user else "Student",
+            "matricNumber": s.matric_number,
+            "level": s.level,
+            "program": s.program,
+            "department": s.department,
+            "faculty": s.faculty,
+            "cgpa": s.cgpa or 0.0,
+            "avatar": s.user.avatar if s.user else None,
+            "totalCreditUnits": total_units,
+            "carryoverUnits": carryover_units,
+            "hasCarryovers": has_carryovers,
+            "coursesCount": len(s_enrs),
+            "isUnderload": is_underload,
+            "underloadReason": getattr(first_e, "underload_reason", None),
+            "concessionReference": getattr(first_e, "concession_reference", None),
+            "approvalStatus": norm_status,
+            "adviserName": getattr(first_e, "adviser_name", None),
+            "adviserRemarks": getattr(first_e, "adviser_remarks", None),
+            "approvedAt": first_e.approved_at.isoformat() if getattr(first_e, "approved_at", None) else None,
+            "enrolledAt": first_e.enrolled_at.isoformat() if first_e.enrolled_at else None
+        })
+
+    # Sort: Pending Approval first, then Disapproved, then Approved
+    status_order = {"Pending Approval": 0, "Disapproved": 1, "Approved": 2}
+    submissions.sort(key=lambda x: (status_order.get(x["approvalStatus"], 9), x["name"]))
+
+    return {
+        "session": session,
+        "semester": semester,
+        "summary": {
+            "totalSubmissions": len(submissions),
+            "pendingCount": pending_count,
+            "approvedCount": approved_count,
+            "disapprovedCount": disapproved_count
+        },
+        "submissions": submissions
+    }
+
+@router.get("/adviser/submission/{student_id}")
+def get_adviser_submission_detail(
+    student_id: int,
+    session: str = "2026/2027",
+    semester: str = "First Semester",
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Returns complete student docket breakdown for deep Level Adviser evaluation.
+    """
+    if current_user.role not in ["lecturer", "admin", "super-admin"]:
+        raise HTTPException(status_code=403, detail="Unauthorized: Level Adviser role required.")
+
+    student = db.query(StudentProfile).filter_by(id=student_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student profile not found")
+
+    enrollments = db.query(CourseEnrollment).filter_by(
+        student_id=student.id,
+        session=session,
+        semester=semester
+    ).all()
+
+    if not enrollments:
+        raise HTTPException(status_code=404, detail="No active course registration found for this student.")
+
+    # Audit carryovers
+    carryovers_raw = compute_unfulfilled_carryovers(db, student, semester)
+    mandatory_carryover_ids = {item["course"].id for item in carryovers_raw}
+
+    courses = []
+    total_units = 0
+    carryover_units = 0
+
+    for enr in enrollments:
+        if enr.course:
+            u = enr.course.credit_units
+            total_units += u
+            if enr.is_carryover:
+                carryover_units += u
+            courses.append({
+                "enrollmentId": enr.id,
+                "courseId": enr.course.id,
+                "code": enr.course.code,
+                "title": enr.course.title,
+                "creditUnits": u,
+                "level": enr.course.level,
+                "category": enr.course.category or "Core",
+                "isCarryover": enr.is_carryover,
+                "registrationType": enr.registration_type,
+                "lecturer": enr.course.lecturer.user.name if enr.course.lecturer and enr.course.lecturer.user else "Faculty Board"
+            })
+
+    courses.sort(key=lambda x: (0 if x["isCarryover"] else 1, x["code"]))
+
+    first_enr = enrollments[0]
+    st = getattr(first_enr, "approval_status", "Pending Approval") or "Pending Approval"
+    if "approved" in st.lower() and "dis" not in st.lower():
+        norm_status = "Approved"
+    elif "disapproved" in st.lower() or "reject" in st.lower():
+        norm_status = "Disapproved"
+    else:
+        norm_status = "Pending Approval"
+
+    is_underload = any(getattr(e, "underload_concession", False) for e in enrollments) or (total_units < 15)
+
+    return {
+        "student": {
+            "id": student.id,
+            "name": student.user.name if student.user else "Student",
+            "matricNumber": student.matric_number,
+            "level": student.level,
+            "program": student.program,
+            "department": student.department,
+            "faculty": student.faculty,
+            "cgpa": student.cgpa,
+            "avatar": student.user.avatar if student.user else None
+        },
+        "session": session,
+        "semester": semester,
+        "totalCreditUnits": total_units,
+        "carryoverUnits": carryover_units,
+        "coursesCount": len(courses),
+        "isUnderload": is_underload,
+        "underloadReason": getattr(first_enr, "underload_reason", None),
+        "concessionReference": getattr(first_enr, "concession_reference", None),
+        "approvalStatus": norm_status,
+        "adviserName": getattr(first_enr, "adviser_name", None),
+        "adviserRemarks": getattr(first_enr, "adviser_remarks", None),
+        "approvedAt": first_enr.approved_at.isoformat() if getattr(first_enr, "approved_at", None) else None,
+        "enrolledAt": first_enr.enrolled_at.isoformat() if first_enr.enrolled_at else None,
+        "courses": courses,
+        "mandatoryCarryoversPending": len(mandatory_carryover_ids - {c["courseId"] for c in courses if c["isCarryover"]})
+    }
+
+@router.post("/adviser/approve")
+def approve_student_registration(
+    payload: AdviserReviewActionRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Approves a student's semester course registration docket.
+    Signs registration with the Level Adviser's name and official timestamp.
+    """
+    if current_user.role not in ["lecturer", "admin", "super-admin"]:
+        raise HTTPException(status_code=403, detail="Unauthorized: Level Adviser role required.")
+
+    enrollments = db.query(CourseEnrollment).filter_by(
+        student_id=payload.studentId,
+        session=payload.session,
+        semester=payload.semester
+    ).all()
+
+    if not enrollments:
+        raise HTTPException(status_code=404, detail="No course enrollments found for this student in the specified session/semester.")
+
+    adviser_name = current_user.name or "Prof. Alistair Finch"
+    now = datetime.utcnow()
+    remarks = payload.remarks or f"Approved and endorsed by Level Adviser {adviser_name}."
+
+    for enr in enrollments:
+        enr.approval_status = "Approved"
+        enr.adviser_name = adviser_name
+        enr.adviser_remarks = remarks
+        enr.approved_at = now
+
+    db.commit()
+
+    student = db.query(StudentProfile).filter_by(id=payload.studentId).first()
+    student_name = student.user.name if student and student.user else f"Student #{payload.studentId}"
+
+    return {
+        "status": "success",
+        "message": f"Successfully approved and signed course registration for {student_name}.",
+        "studentId": payload.studentId,
+        "approvalStatus": "Approved",
+        "adviserName": adviser_name,
+        "adviserRemarks": remarks,
+        "approvedAt": now.isoformat()
+    }
+
+@router.post("/adviser/reject")
+def disapprove_student_registration(
+    payload: AdviserReviewActionRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Disapproves a student's course registration docket and sends it back for revision.
+    Requires corrective remarks so the student knows what to change.
+    """
+    if current_user.role not in ["lecturer", "admin", "super-admin"]:
+        raise HTTPException(status_code=403, detail="Unauthorized: Level Adviser role required.")
+
+    if not payload.remarks or not payload.remarks.strip():
+        raise HTTPException(
+            status_code=422,
+            detail="Disapproval feedback is required: Please specify the corrective adjustments needed by the student."
+        )
+
+    enrollments = db.query(CourseEnrollment).filter_by(
+        student_id=payload.studentId,
+        session=payload.session,
+        semester=payload.semester
+    ).all()
+
+    if not enrollments:
+        raise HTTPException(status_code=404, detail="No course enrollments found for this student in the specified session/semester.")
+
+    adviser_name = current_user.name or "Prof. Alistair Finch"
+    now = datetime.utcnow()
+
+    for enr in enrollments:
+        enr.approval_status = "Disapproved"
+        enr.adviser_name = adviser_name
+        enr.adviser_remarks = payload.remarks.strip()
+        enr.approved_at = None
+
+    db.commit()
+
+    student = db.query(StudentProfile).filter_by(id=payload.studentId).first()
+    student_name = student.user.name if student and student.user else f"Student #{payload.studentId}"
+
+    return {
+        "status": "success",
+        "message": f"Course registration for {student_name} has been marked as Disapproved. The student has been notified to make required adjustments.",
+        "studentId": payload.studentId,
+        "approvalStatus": "Disapproved",
+        "adviserName": adviser_name,
+        "adviserRemarks": payload.remarks.strip(),
+        "reviewedAt": now.isoformat()
+    }

@@ -60,6 +60,10 @@ async def lifespan(app: FastAPI):
                 ("underload_concession", "BOOLEAN DEFAULT 0"),
                 ("underload_reason", "VARCHAR(255) DEFAULT NULL"),
                 ("concession_reference", "VARCHAR(100) DEFAULT NULL"),
+                ("approval_status", "VARCHAR(50) DEFAULT 'Pending Approval'"),
+                ("adviser_remarks", "VARCHAR(500) DEFAULT NULL"),
+                ("adviser_name", "VARCHAR(100) DEFAULT NULL"),
+                ("approved_at", "DATETIME DEFAULT NULL"),
             ]
             for col_name, col_def in new_e_columns:
                 if col_name not in existing_e_cols:

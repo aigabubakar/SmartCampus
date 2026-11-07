@@ -40,6 +40,10 @@ class CourseEnrollment(Base):
     underload_concession = Column(Boolean, default=False)
     underload_reason = Column(String(255), nullable=True)
     concession_reference = Column(String(100), nullable=True)
+    approval_status = Column(String(50), default="Pending Approval")  # Pending Approval, Approved, Disapproved
+    adviser_remarks = Column(String(500), nullable=True)
+    adviser_name = Column(String(100), nullable=True)
+    approved_at = Column(DateTime, nullable=True)
     enrolled_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships

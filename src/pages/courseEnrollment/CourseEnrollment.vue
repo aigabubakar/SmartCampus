@@ -41,9 +41,27 @@
 
             <!-- Workspace Mode Toggle Tabs -->
             <div class="d-flex align-items-center gap-8 bg-neutral-100 p-4 radius-10 flex-shrink-0">
+              <!-- Adviser Tab (Visible to Lecturers & Admins) -->
+              <button 
+                v-if="enrollmentStore.isAdviserOrAdmin"
+                type="button" 
+                class="btn btn-sm radius-8 px-14 py-8 fw-semibold transition-2 d-inline-flex align-items-center gap-6"
+                :class="enrollmentStore.activeTab === 'adviser' ? 'bg-primary-600 text-white shadow-sm' : 'text-secondary-light bg-transparent'"
+                @click="enrollmentStore.activeTab = 'adviser'"
+              >
+                <i class="ri-shield-user-line"></i> 
+                <span>Level Adviser Console</span>
+                <span 
+                  v-if="enrollmentStore.adviserSummary?.pendingCount > 0" 
+                  class="badge bg-danger-600 text-white text-xxs px-6 py-2 rounded-pill fw-bold"
+                >
+                  {{ enrollmentStore.adviserSummary?.pendingCount }}
+                </span>
+              </button>
+
               <button 
                 type="button" 
-                class="btn btn-sm radius-8 px-16 py-8 fw-semibold transition-2"
+                class="btn btn-sm radius-8 px-14 py-8 fw-semibold transition-2"
                 :class="enrollmentStore.activeTab === 'registration' ? 'bg-primary-600 text-white shadow-sm' : 'text-secondary-light bg-transparent'"
                 @click="enrollmentStore.activeTab = 'registration'"
               >
@@ -51,7 +69,7 @@
               </button>
               <button 
                 type="button" 
-                class="btn btn-sm radius-8 px-16 py-8 fw-semibold transition-2"
+                class="btn btn-sm radius-8 px-14 py-8 fw-semibold transition-2"
                 :class="enrollmentStore.activeTab === 'slip' ? 'bg-primary-600 text-white shadow-sm' : 'text-secondary-light bg-transparent'"
                 @click="handleViewSlip"
               >
@@ -59,6 +77,85 @@
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Live Student Registration Status Banner -->
+      <div v-if="!enrollmentStore.isAdviserOrAdmin && enrollmentStore.currentEnrollments.length > 0" class="mb-24">
+        <!-- 1. Approved -->
+        <div v-if="enrollmentStore.isApprovedByAdviser" class="alert alert-success d-flex align-items-center justify-content-between p-16 radius-12 border-0 shadow-xs mb-0">
+          <div class="d-flex align-items-center gap-12">
+            <span class="badge bg-success-600 text-white rounded-circle p-8 flex-shrink-0">
+              <i class="ri-shield-check-fill text-lg"></i>
+            </span>
+            <div>
+              <h6 class="text-xs fw-bold text-success-900 mb-2">
+                Course Registration Approved & Signed by Level Adviser
+              </h6>
+              <p class="text-xxs text-success-800 mb-0">
+                Endorsed by <strong>{{ enrollmentStore.adviserReview?.adviserName || 'Prof. Alistair Finch' }}</strong>
+                <span v-if="enrollmentStore.adviserReview?.adviserRemarks"> — Remarks: "{{ enrollmentStore.adviserReview?.adviserRemarks }}"</span>.
+                Your Form 01 Course Registration Slip is cleared for examinations.
+              </p>
+            </div>
+          </div>
+          <button 
+            type="button" 
+            class="btn btn-success btn-xs radius-6 px-12 py-6 text-xxs fw-bold flex-shrink-0 ms-12"
+            @click="handleViewSlip"
+          >
+            <i class="ri-printer-line me-2"></i> View Official Slip
+          </button>
+        </div>
+
+        <!-- 2. Disapproved / Action Required -->
+        <div v-else-if="enrollmentStore.isDisapprovedByAdviser" class="alert alert-danger d-flex align-items-center justify-content-between p-16 radius-12 border-0 shadow-xs mb-0">
+          <div class="d-flex align-items-center gap-12">
+            <span class="badge bg-danger-600 text-white rounded-circle p-8 flex-shrink-0">
+              <i class="ri-alert-fill text-lg"></i>
+            </span>
+            <div>
+              <h6 class="text-xs fw-bold text-danger-900 mb-2">
+                Action Required: Level Adviser Disapproved Registration
+              </h6>
+              <p class="text-xxs text-danger-800 mb-0">
+                <strong>Adviser Feedback:</strong> "{{ enrollmentStore.adviserReview?.adviserRemarks || 'Please review your course selection and re-submit.' }}"
+                <br />
+                Your registration docket has been unlocked. Make the requested course adjustments below and click <strong>"Re-Submit Registration"</strong>.
+              </p>
+            </div>
+          </div>
+          <button 
+            type="button" 
+            class="btn btn-danger btn-xs radius-6 px-12 py-6 text-xxs fw-bold flex-shrink-0 ms-12"
+            @click="enrollmentStore.activeTab = 'registration'"
+          >
+            <i class="ri-edit-line me-2"></i> Fix Courses Below
+          </button>
+        </div>
+
+        <!-- 3. Pending Review -->
+        <div v-else-if="enrollmentStore.isPendingAdviserApproval" class="alert alert-warning d-flex align-items-center justify-content-between p-16 radius-12 border-0 shadow-xs mb-0">
+          <div class="d-flex align-items-center gap-12">
+            <span class="badge bg-warning-600 text-white rounded-circle p-8 flex-shrink-0">
+              <i class="ri-time-fill text-lg"></i>
+            </span>
+            <div>
+              <h6 class="text-xs fw-bold text-warning-900 mb-2">
+                Registration Submitted • Awaiting Level Adviser Endorsement
+              </h6>
+              <p class="text-xxs text-warning-800 mb-0">
+                Your course form has been submitted and is currently queued for audit by your Departmental Level Adviser (<strong>{{ enrollmentStore.adviserReview?.adviserName || 'Prof. Alistair Finch' }}</strong>).
+              </p>
+            </div>
+          </div>
+          <button 
+            type="button" 
+            class="btn btn-outline-warning btn-xs radius-6 px-12 py-6 text-xxs fw-bold text-neutral-900 flex-shrink-0 ms-12"
+            @click="handleViewSlip"
+          >
+            <i class="ri-file-text-line me-2"></i> Preview Slip
+          </button>
         </div>
       </div>
 
@@ -73,8 +170,13 @@
 
       <!-- Main Workspace -->
       <div v-else>
+        <!-- Tab 0: Level Adviser Review & Approval Console (For Lecturers & Admins) -->
+        <div v-if="enrollmentStore.activeTab === 'adviser'">
+          <AdviserApprovalConsole />
+        </div>
+
         <!-- Tab 1: Registration Workspace -->
-        <div v-if="enrollmentStore.activeTab === 'registration'">
+        <div v-else-if="enrollmentStore.activeTab === 'registration'">
           <!-- SmartAdvisor AI Directive Banner -->
           <AiAdvisorBanner />
 
@@ -117,6 +219,7 @@ import CourseCatalogueSection from '@/components/courseEnrollment/CourseCatalogu
 import RegistrationDocketCard from '@/components/courseEnrollment/RegistrationDocketCard.vue';
 import CourseRegistrationSlip from '@/components/courseEnrollment/CourseRegistrationSlip.vue';
 import InterDepartmentalModal from '@/components/courseEnrollment/InterDepartmentalModal.vue';
+import AdviserApprovalConsole from '@/components/courseEnrollment/AdviserApprovalConsole.vue';
 import { useEnrollmentStore } from '@/stores/enrollment.js';
 
 export default {
@@ -130,7 +233,8 @@ export default {
     CourseCatalogueSection,
     RegistrationDocketCard,
     CourseRegistrationSlip,
-    InterDepartmentalModal
+    InterDepartmentalModal,
+    AdviserApprovalConsole
   },
   setup() {
     const enrollmentStore = useEnrollmentStore();
@@ -138,6 +242,10 @@ export default {
     onMounted(async () => {
       try {
         await enrollmentStore.fetchAudit();
+        if (enrollmentStore.isAdviserOrAdmin) {
+          enrollmentStore.activeTab = 'adviser';
+          await enrollmentStore.fetchAdviserSubmissions();
+        }
       } catch (err) {
         console.error('Failed to load course enrollment audit:', err);
       }
